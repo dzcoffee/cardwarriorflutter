@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "628675599625",
+    "firebase_url": "https://card-febd1-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "card-febd1",
+    "storage_bucket": "card-febd1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628675599625:android:335858c25bbeeb69ae07d8",
+        "android_client_info": {
+          "package_name": "com.example.card_warrior"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpv8nenVYJAWh6uwC8Wp90I61NDiGg7Y4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
