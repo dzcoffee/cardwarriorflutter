@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Card{
   String _name;
   int _cost;
@@ -46,6 +48,82 @@ class Card{
     return "Card(name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
   }
 
+  Widget toWidget(String imagePath) {
+    const typeNames = {
+      0: 'Soldier',
+      1: 'Warrior',
+      2: 'Magician',
+      3: 'Archer',
+      4: 'Assassin'
+    };
+    String typeString = typeNames[_type] ?? 'Unknown';
+
+    return Container(
+      margin: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        /*
+        image: DecorationImage(
+          image: AssetImage(imagePath),
+          fit: BoxFit.cover,
+        ),
+        */
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _name,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+              ),
+            ),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Cost: $_cost",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Text(
+                  "HP: $_hp",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "ATK: $_atk",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                Text(
+                  "Type: $typeString",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class User{
