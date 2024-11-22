@@ -46,65 +46,158 @@ class _CustomizingPageState extends State<CustomizingPage> {
     });
   }
 
+  void toggleCardSelection(Warrior card){
+    setState(() {
+      if(user.cardDeck.contains(card)){
+        user.deleteCardFromDeck(card);
+      }
+      else{
+        user.addCardToDeck(card);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Test'),
+        title: Text('Deck Customizing'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.check),
+            onPressed: (){
+              print('Selected Cards: ${user.cardDeck}');
+            },
+          )
+        ],
       ),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
+          childAspectRatio: 3/4,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),
         itemCount: cardList.length,
         itemBuilder: (context, index){
-          return Container(
-            width: 300,
-            height: 400,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/icons/card.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
+          final card = cardList[index];
+          final isSelected = user.cardDeck.contains(card);
+          return GestureDetector(
+            onTap: () => toggleCardSelection(card), // 카드 선택/해제 토글
             child: Stack(
               children: [
-                Positioned(
-                  top: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text('${cardList[index].cost}')
+                Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/card.png'),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? Colors.blue : Colors.transparent,
+                      width: 3, // 선택 상태 강조
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        right: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${card.cost}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        right: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${card.name}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${card.atk}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${card.hp}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  bottom: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                      child: Text('${cardList[index].name}')
+                // 선택 표시 (체크 아이콘)
+                if (isSelected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Icon(
+                      Icons.check_circle,
+                      color: Colors.blue,
+                      size: 24,
+                    ),
                   ),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Text('${cardList[index].atk}'),
-                ),
-                Positioned(
-                  bottom: 8,
-                  right: 8,
-                  child: Text('${cardList[index].hp}'),
-                ),
               ],
             ),
-
           );
         }
-
-
-
       )
     );
   }
