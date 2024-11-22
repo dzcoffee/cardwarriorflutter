@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 
-class Card{
+class Warrior{
   String _name;
   int _cost;
   int _hp;
   int _atk;
   int _type;
+  int _id;
 
-  Card(this._name, this._cost, this._hp, this._atk, this._type);
+
+  Warrior(this._id, this._name, this._cost, this._hp, this._atk, this._type);
 
   String get name => _name;
   int get cost => _cost;
   int get hp => _hp;
   int get atk => _atk;
   int get type => _type;
+  int get id => _id;
 
-  void attack(Card opponent){
+  void attack(Warrior opponent){
     if(_type == 1 && opponent._type == 4){
       opponent._hp -= _atk*2;
       _hp -= opponent._atk;
@@ -45,84 +48,7 @@ class Card{
   }
 
   String toString() {
-    return "Card(name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
-  }
-
-  Widget toWidget(String imagePath) {
-    const typeNames = {
-      0: 'Soldier',
-      1: 'Warrior',
-      2: 'Magician',
-      3: 'Archer',
-      4: 'Assassin'
-    };
-    String typeString = typeNames[_type] ?? 'Unknown';
-
-    return Container(
-      margin: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        /*
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-        */
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _name,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [Shadow(blurRadius: 4, color: Colors.black)],
-              ),
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Cost: $_cost",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Text(
-                  "HP: $_hp",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "ATK: $_atk",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Text(
-                  "Type: $typeString",
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+    return "Card(id: $_id, name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
   }
 }
 
@@ -131,46 +57,46 @@ class User{
   int _health = 20;
   String _username;
 
-  List<Card> cardDeck = [];
-  List<Card> cardOnField = [];
-  List<Card> cardOnHand = [];
+  List<Warrior> cardDeck = [];
+  List<Warrior> cardOnField = [];
+  List<Warrior> cardOnHand = [];
 
   User(this._username);
 
-  void addCardToDeck(Card c){
+  void addCardToDeck(Warrior c){
     if (cardDeck.length < 26) {
       cardDeck.add(c);
     }
   }
 
-  void addCardToField(Card c){
+  void addCardToField(Warrior c){
     if (cardOnField.length < 7){
       cardOnField.add(c);
     }
   }
 
-  void addCardToHand(Card c){
+  void addCardToHand(Warrior c){
     if(cardDeck.isNotEmpty){
       cardOnHand.add(c);
     }
   }
 
-  void deleteCardFromDeck(Card c){
+  void deleteCardFromDeck(Warrior c){
     cardDeck.remove(c);
   }
 
-  void deleteCardFromField(Card c){
+  void deleteCardFromField(Warrior c){
     cardOnField.remove(c);
   }
 
-  void deleteCardFromHand(Card c){
+  void deleteCardFromHand(Warrior c){
     cardOnHand.remove(c);
   }
 
   void turnEnd(User other){
     other._money++;
     if (cardDeck.isNotEmpty && cardOnHand.length < 10) {
-      Card drawnCard = cardDeck.removeLast();
+      Warrior drawnCard = cardDeck.removeLast();
       addCardToHand(drawnCard);
     }
   }
