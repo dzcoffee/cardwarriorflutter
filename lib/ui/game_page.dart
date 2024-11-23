@@ -1,11 +1,134 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:card_warrior/game_service/main_service.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
+class Card{
+  String _name;
+  int _cost;
+  int _hp;
+  int _atk;
+  int _type;
+  int _id;
+
+  Card(this._name, this._cost, this._hp, this._atk, this._type, this._id);
+
+  String get name => _name;
+  int get cost => _cost;
+  int get hp => _hp;
+  int get atk => _atk;
+  int get type => _type;
+
+  void attack(Card opponent){
+    if(_type == 1 && opponent._type == 4){
+      opponent._hp -= _atk*2;
+      _hp -= opponent._atk;
+    }
+    else if(_type == 2 && opponent._type == 3){
+      opponent._hp -= _atk*2;
+      _hp -= opponent._atk;
+    }
+    else if(_type == 3 && opponent._type == 1){
+      opponent._hp -= _atk*2;
+      _hp -= opponent._atk;
+    }
+    else if(_type == 4 && opponent._type == 2){
+      opponent._hp -= _atk*2;
+      _hp -= opponent._atk;
+    }
+    else{
+      opponent._hp -= _atk;
+      _hp -= opponent._atk;
+    }
+  }
+
+  void attackUser(Player player){
+    if(player.cardOnField.isEmpty){
+      player._health -= _atk;
+    }
+  }
+
+  String toString() {
+    return "Card(name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
+  }
+
+}
+
+class Player{
+  int _money = 1;
+  int _health = 20;
+  String _username;
+
+  List<Card> cardDeck = [];
+  List<Card> cardOnField = [];
+  List<Card> cardOnHand = [];
+
+  Player(this._username);
+
+  void addCardToDeck(Card c){
+    if (cardDeck.length < 26) {
+      cardDeck.add(c);
+    }
+  }
+
+  void addCardToField(Card c){
+    if (cardOnField.length < 7){
+      cardOnField.add(c);
+    }
+  }
+
+  void addCardToHand(Card c){
+    if(cardDeck.isNotEmpty){
+      cardOnHand.add(c);
+    }
+  }
+
+  void deleteCardFromDeck(Card c){
+    cardDeck.remove(c);
+  }
+
+  void deleteCardFromField(Card c){
+    cardOnField.remove(c);
+  }
+
+  void deleteCardFromHand(Card c){
+    cardOnHand.remove(c);
+  }
+
+  void turnEnd(Player other){
+    other._money++;
+    if (cardDeck.isNotEmpty && cardOnHand.length < 10) {
+      Card drawnCard = cardDeck.removeLast();
+      addCardToHand(drawnCard);
+    }
+  }
+
+  int get health => _health;
+
+  set health(int value) {
+    _health = value.clamp(0, 20);
+  }
+
+  int get money => _money;
+
+  set money(int value) {
+    _money = value.clamp(0, 10);
+  }
+
+  void surrender(){
+    print("end game");
+  }
+
+  String toString() {
+    return "User(username: $_username, health: $_health, money: $_money, "
+        "deck: ${cardDeck.length} cards, field: ${cardOnField.length} cards, hand: ${cardOnHand.length} cards)";
+  }
+}
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -23,12 +146,94 @@ class _GamePageState extends State<GamePage> {
   String? userId = '';
   String? docId;
   StreamSubscription<DocumentSnapshot>? matchNewSubs;
+  FirebaseDatabase database = FirebaseDatabase.instance;
+  List<Card> deck = [];
+  List<Card> myHandCards = [];
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
     getCurrentUser();
     userId = loggedUser?.email?.split('@').first;
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    // TODO: implement initState
+    DataSnapshot snapshot = await database.ref("userDeck/${userId}").ref.get();
+    Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
+
+    List<Card> fetchedCards = [];
+
+    values.forEach((key, value){
+      final card = Card(
+          value['name'],
+          value['cost'],
+          value['hp'],
+          value['attack'],
+          value['type'],
+          value['id']
+      );
+      deck.add(card);
+
+      setState(() {
+        deck = fetchedCards; // 상태 업데이트
+
+      });
+      print('덱은 다음과 같음 : ${deck}');
+      if(deck.length == 2){
+        saveRandomCardsOnHand();
+      }
+    });
+  }
+
+  Future<void> saveRandomCardsOnHand() async {
+    // 랜덤하게 2개의 카드 뽑기
+    final random = Random();
+    if (deck.length < 2) {
+      print('Deck에 카드가 2개 이상 있어야 합니다.');
+      return;
+    }
+
+    // 랜덤 인덱스 생성
+    int index1 = random.nextInt(deck.length);
+    int index2;
+
+    // 중복되지 않는 인덱스 생성
+    do {
+      index2 = random.nextInt(deck.length);
+    } while (index1 == index2);
+
+    // 선택된 카드
+    Card card1 = deck[index1];
+    Card card2 = deck[index2];
+
+    myHandCards.add(card1);
+    myHandCards.add(card2);
+
+    try{
+      print("덱 카드 저장 직전");
+      await firestore.collection('matches').doc(docId).update({
+        '${userId}': {
+          'onHand' :
+            {
+              'Card1': {
+                'id': card1._id, // 카드의 id 속성
+                'name': card1.name, // 카드의 name 속성
+                'attack': card1.atk, // 카드의 attack 속성
+              },
+              'Card2': {
+                'id': card2._id,
+                'name': card2.name,
+                'attack': card2.atk,
+              },
+            },
+        }
+      });
+    }catch(e){
+      print(e);
+    }
   }
 
   void getCurrentUser() {
@@ -59,9 +264,15 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
-  void listenToNewMatch(String docId) {
+  void listenToNewMatch(String docId) { //여기서 FireStore값에 따라 상태 업데이트
     matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
       print('docId는 다음과 같습니다' + docId);
+      if(!docSnapshot.exists){
+        _showVictoryPopup();
+      }
+      setState(() {
+
+      });
     });
   }
 
@@ -261,6 +472,37 @@ class _GamePageState extends State<GamePage> {
           ],
         );
       }
+    );
+  }
+
+  void _showVictoryPopup() {
+    stopSubs();
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context){
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Expanded(
+                    child: Text('승리!', textAlign: TextAlign.center)
+                ),
+                ElevatedButton(
+                  onPressed: (){
+                    stopSubs();
+
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  child: const Icon(Icons.close)
+                )
+              ],
+            ),
+          );
+        }
     );
   }
 }
