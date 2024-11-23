@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:card_warrior/game_service/main_service.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class GamePage extends StatefulWidget {
@@ -14,14 +18,58 @@ class _GamePageState extends State<GamePage> {
   MainService gameInstance = MainService();
   bool _isMyTurn = true;
 
+  final _authentication = FirebaseAuth.instance;
+  User? loggedUser;
+  String? userId = '';
+  String? docId;
+  StreamSubscription<DocumentSnapshot>? matchNewSubs;
+
   @override
-  void initState(){
+  void initState() {
     super.initState();
+    getCurrentUser();
+    userId = loggedUser?.email?.split('@').first;
   }
+
+  void getCurrentUser() {
+    try {
+      final user = _authentication.currentUser;
+      if (user != null) {
+        loggedUser = user;
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
 
   @override
   void dispose(){
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 여기서 arguments를 받아올 수 있습니다
+    final String? arguments = ModalRoute.of(context)?.settings.arguments as String?;
+    if (arguments != null) {
+      docId = arguments; // docId 변수에 저장
+      listenToNewMatch(docId!);
+    }
+  }
+
+  void listenToNewMatch(String docId) {
+    matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
+      print('docId는 다음과 같습니다' + docId);
+    });
+  }
+
+  void stopSubs(){
+    if(matchNewSubs != null){
+      print('매치성공 구독 종료');
+      matchNewSubs!.cancel();
+    }
   }
 
   @override
@@ -55,7 +103,7 @@ class _GamePageState extends State<GamePage> {
                       _isMyTurn = false;
                     });
                   },
-                  child: const Text('내 턴 종료'),
+                  child: Text('내 턴 종료'),
                 ),
               ),
             ),
@@ -189,7 +237,12 @@ class _GamePageState extends State<GamePage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: (){
+                  onPressed: ()async{
+                    stopSubs();
+                    await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
+
+                    Navigator.pop(context);
+                    Navigator.pop(context);
                     Navigator.pop(context);
                     Navigator.pop(context);
                     gameInstance = MainService();
