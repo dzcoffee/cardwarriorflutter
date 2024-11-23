@@ -1,5 +1,4 @@
 import 'package:card_warrior/effect/splash_page.dart';
-import 'package:card_warrior/ui/MatchingPage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,8 +42,7 @@ class _MyAppState extends State<MyApp> {
         '/mainpage': (context) => const MainPage(),
         '/gamepage': (context) => const GamePage(),
         '/custompage': (context) => const CustomizingPage(),
-        '/optionpage': (context) => const OptionPage(),
-        '/matchingpage' : (context) => const MatchingPage()
+        '/optionpage': (context) => const OptionPage()
       },
     );
   }
@@ -98,7 +96,7 @@ class _MainPageState extends State<MainPage> {
               child: const Text('게임시작'),
               onPressed: (){
                 setState(() {
-                  Navigator.pushNamed(context, '/matchingpage');
+                  Navigator.pushNamed(context, '/gamepage');
                 });
               },
             ),

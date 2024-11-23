@@ -68,6 +68,7 @@ class _GamePageState extends State<GamePage> {
                   onPressed: (){
                     setState(() {
                       _isMyTurn = true;
+                      gameInstance.drawCard();
                     });
                   },
                   child: const Text('상대 턴 종료'),
@@ -84,7 +85,7 @@ class _GamePageState extends State<GamePage> {
                     IconButton(
                       onPressed: () {
                         if(gameInstance.cards.length > 3) {
-                      gameInstance.allMoveLeft();
+                      gameInstance.MoveLeft();
                     }
                   },
                       icon: const Icon(Icons.arrow_back, size: 40, color: Colors.white),
@@ -107,7 +108,7 @@ class _GamePageState extends State<GamePage> {
                     IconButton(
                       onPressed: () {
                         if(gameInstance.cards.length > 3) {
-                      gameInstance.allMoveRight();
+                      gameInstance.MoveRight();
                     }
                   },
                       icon: const Icon(Icons.arrow_forward, size: 40, color: Colors.white),
