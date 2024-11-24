@@ -455,8 +455,8 @@ class _GamePageState extends State<GamePage> {
 
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    //Navigator.pop(context); Matching Page 넣으면 주석 빼기
+                    //Navigator.pop(context);
                     gameInstance = MainService();
                   },
                   child: const Text('네'),
@@ -494,9 +494,9 @@ class _GamePageState extends State<GamePage> {
 
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    //Navigator.pop(context); Matching Page 넣으면 주석 빼기
+                    //Navigator.pop(context);
+                    //Navigator.pop(context);
                   },
                   child: const Icon(Icons.close)
                 )
