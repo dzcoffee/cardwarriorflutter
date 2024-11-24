@@ -115,10 +115,6 @@ class CostComponent extends PositionComponent {
 
 class CardComponent extends PositionComponent {
   final SpriteComponent cardSprite;
-  static int currentIndex = 0;
-  static int first = 0;
-  static int middle = 1;
-  static int last = 2;
   late RectangleComponent glowEffect;
   bool isGlowing = false; // 카드가 강조 상태인지 여부
   bool isVisible = false;
@@ -150,55 +146,6 @@ class CardComponent extends PositionComponent {
     super.render(canvas);
   }
 
-  /// 카드 이동 애니메이션
-  void move(Vector2 offset, double duration) {
-    add(
-      MoveByEffect(
-        offset,
-        EffectController(duration: duration, curve: Curves.easeInOut),
-      ),
-    );
-  }
-
-  void moveLeft() {
-    int length = children.length;
-    if(isVisible){
-      if(myIndex == currentIndex){
-        isVisible = false;
-      } else if(myIndex == (currentIndex + 1) % length){
-        isGlowing = false;
-        first = myIndex;
-      } else if(myIndex == (currentIndex + 2) % length){
-        isGlowing = true;
-        middle = myIndex;
-        }
-      } else{
-      if(myIndex == (currentIndex + 3) % length){
-        last = myIndex;
-        isVisible = true;
-      }
-    }
-  }
-
-  void moveRight() {
-    int length = children.length;
-    if(isVisible){
-      if(myIndex == currentIndex){
-        isGlowing = true;
-        middle = myIndex;
-      } else if(myIndex == (currentIndex + 1) % length){
-        last = myIndex;
-        isGlowing = false;
-      } else if(myIndex == (currentIndex + 2) % length){
-        isVisible = false;
-      }
-    } else{
-      if(myIndex == (currentIndex - 1 + length) % length){
-        first = myIndex;
-        isVisible = true;
-      }
-    }
-  }
 
 
 }

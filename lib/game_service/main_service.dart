@@ -1,14 +1,30 @@
+import 'dart:ui';
+
 import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/animation.dart';
 
 class MainService extends FlameGame{
+
+  late final screenWidth;
+  late final screenHeight;
+
+  List<double> cardPositions = [0.17, 0.27, 0.42, 0.57, 0.67];
+
+  late final yPosition;
+
   late HealthComponent health;
   late CostComponent cost;
   List<CardComponent> cards = [];
-  List<CardComponent> visibleCards = [];
+
+  int currentIndex = 1;
+  int first = 0;
+  int middle = 1;
+  int last = 2;
 
   late HealthComponent oppoHp;
   late CostComponent oppoCost;
@@ -16,6 +32,12 @@ class MainService extends FlameGame{
   //게임 인스턴스 생성될 때 실행하는 함수
   @override
   Future<void> onLoad() async{
+    screenWidth = size.x;
+    screenHeight = size.y;
+    cardPositions = cardPositions.map((num)=> num * screenWidth).toList();
+
+    yPosition = screenHeight * 0.85;
+
     final BackgroundService _ = BackgroundService();
     add(_);
     await super.onLoad();
@@ -35,16 +57,22 @@ class MainService extends FlameGame{
     add(oppoCost);
 
     //카드 초기화
-    for (int i = 0; i < 4; i++){
+    for (int i = 0; i < 5; i++){
       final sprite = await loadCardImage('card.png');
       CardComponent card = CardComponent(cardSprite: sprite);
-      card.isVisible = true;
+      if(i < 3) {
+        card.position = Vector2(
+            cardPositions[i+1],
+            yPosition);
+        add(card);
+      } else{
+        card.position = Vector2(cardPositions[4], yPosition);
+      }
       card.myIndex = i;
       cards.add(card);
     }
     cards[1].isGlowing = true;
 
-    _updateVisibleCards();
   }
 
   Future<SpriteComponent> loadCardImage(String imagePath) async {
@@ -54,60 +82,91 @@ class MainService extends FlameGame{
     return sprite;
   }
 
-  void allMoveLeft(){
-    for(var card in cards){
-      card.moveLeft();
+  /// 카드 이동 애니메이션
+  MoveToEffect move(offset, double duration) {
+    return MoveToEffect(
+      offset,
+      EffectController(duration: duration, curve: Curves.easeInOut),
+    );
+  }
+
+  RotateEffect rotate(double angle, double duration) {
+    return RotateEffect.by(
+      angle,
+      EffectController(duration: duration, curve: Curves.easeInOut)
+    );
+  }
+
+  void MoveLeft(){
+    if(currentIndex == 0) return;
+
+    cards[currentIndex].isGlowing = false;
+
+    print(currentIndex);
+    //카드 전부 이동해야함
+    if(currentIndex == first){
+      //이전카드 -> first
+      cards[first-1].position = Vector2(cardPositions[0], yPosition);
+      add(cards[first-1]);
+      cards[first-1].add(move(Vector2(cardPositions[1], yPosition), 0.3));
+      //first -> middle
+      cards[first].add(move(Vector2(cardPositions[2], yPosition), 0.3));
+      //middle -> last
+      cards[middle].add(move(Vector2(cardPositions[3], yPosition), 0.3));
+      //last -> 이후 카드
+      cards[last].add(move(Vector2(cardPositions[4], yPosition), 0.5));
+      remove(cards[last]);
+      Future.delayed(Duration(milliseconds: 100), () {
+        first--;
+        middle--;
+        last--;
+      });
     }
-    CardComponent.currentIndex = (CardComponent.currentIndex - 1 + cards.length) % cards.length;
-    _animateCardTransition(Vector2(-100, 0));
+    cards[--currentIndex].isGlowing = true;
+
   }
 
-  void allMoveRight(){
-    for(var card in cards){
-      card.moveRight();
+  void MoveRight(){
+    int length = cards.length;
+    print(currentIndex);
+    if(currentIndex == length - 1) return;
+
+    cards[currentIndex].isGlowing = false;
+    //전부 다 움직여야 함
+    if(currentIndex == last){
+      //이후 카드 -> last
+      cards[last + 1].position = Vector2(cardPositions[4], yPosition);
+      add(cards[last+1]);
+      cards[last + 1].add(move(Vector2(cardPositions[3], yPosition), 0.3));
+      //last -> middle
+      cards[last].add(move(Vector2(cardPositions[2], yPosition), 0.3));
+      //middle -> first
+      cards[middle].add(move(Vector2(cardPositions[1], yPosition), 0.3));
+      //first -> 이전 카드
+      cards[first].add(move(Vector2(cardPositions[0], yPosition), 0.5));
+      remove(cards[first]);
+      Future.delayed(Duration(milliseconds: 100), () {
+        first++;
+        middle++;
+        last++;
+      });
+
     }
-    CardComponent.currentIndex = (CardComponent.currentIndex + 1) % cards.length;
-    _animateCardTransition(Vector2(100, 0));
+    cards[++currentIndex].isGlowing = true;
   }
 
-
-  void _animateCardTransition(Vector2 offset) {
-    for (var card in visibleCards) {
-      card.move(offset, 0.5); // 부드러운 이동
+  void drawCard() async{
+      final sprite = await loadCardImage('card.png');
+      CardComponent card = CardComponent(cardSprite: sprite);
+      card.position = Vector2(screenWidth * 0.1, size.y * 0.6);
+      card.myIndex = cards.length;
+      cards.add(card);
+      add(card);
+      card.add(move(Vector2(cardPositions[4], yPosition), 0.7));
+      Future.delayed(Duration(milliseconds: 700), (){
+        remove(card);
+      });
     }
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _updateVisibleCards();
-    });
-  }
-
-
-  void _updateVisibleCards() {
-    removeAll(visibleCards);
-    visibleCards.clear();
-
-    final baseX = 200.0; // 중앙 기준 X 위치
-    final baseY = 650.0; // 겹치는 Y 위치
-    final overlapOffset = 5.0; // 카드 간의 겹침 정도
-    final rotationAngles = [-0.1, 0.0, 0.1]; // 각 카드의 회전 각도 (라디안 값)
-
-    cards[CardComponent.first].position = Vector2(baseX - 10 * overlapOffset, baseY);
-    cards[CardComponent.first].angle = rotationAngles[0];
-    visibleCards.add(cards[CardComponent.first]);
-    add(cards[CardComponent.first]);
-
-    cards[CardComponent.middle].position = Vector2(baseX, baseY);
-    cards[CardComponent.middle].angle = rotationAngles[1];
-    visibleCards.add(cards[CardComponent.middle]);
-    add(cards[CardComponent.middle]);
-
-    cards[CardComponent.last].position = Vector2(baseX + 10 * overlapOffset, baseY);
-    cards[CardComponent.last].angle = rotationAngles[2];
-    visibleCards.add(cards[CardComponent.last]);
-    add(cards[CardComponent.last]);
-
-  }
-
 
   //update마다 실행되는 함수
   @override
@@ -120,10 +179,5 @@ class MainService extends FlameGame{
   void onRemove(){
     super.onRemove();
     cards.clear();
-    visibleCards.clear();
-    CardComponent.currentIndex = 0;
-    CardComponent.first = 0;
-    CardComponent.middle = 1;
-    CardComponent.last = 2;
   }
 }
