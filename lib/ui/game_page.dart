@@ -7,128 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:card_warrior/game_logic.dart';
 
-class Card{
-  String _name;
-  int _cost;
-  int _hp;
-  int _atk;
-  int _type;
-  int _id;
-
-  Card(this._name, this._cost, this._hp, this._atk, this._type, this._id);
-
-  String get name => _name;
-  int get cost => _cost;
-  int get hp => _hp;
-  int get atk => _atk;
-  int get type => _type;
-
-  void attack(Card opponent){
-    if(_type == 1 && opponent._type == 4){
-      opponent._hp -= _atk*2;
-      _hp -= opponent._atk;
-    }
-    else if(_type == 2 && opponent._type == 3){
-      opponent._hp -= _atk*2;
-      _hp -= opponent._atk;
-    }
-    else if(_type == 3 && opponent._type == 1){
-      opponent._hp -= _atk*2;
-      _hp -= opponent._atk;
-    }
-    else if(_type == 4 && opponent._type == 2){
-      opponent._hp -= _atk*2;
-      _hp -= opponent._atk;
-    }
-    else{
-      opponent._hp -= _atk;
-      _hp -= opponent._atk;
-    }
-  }
-
-  void attackUser(Player player){
-    if(player.cardOnField.isEmpty){
-      player._health -= _atk;
-    }
-  }
-
-  String toString() {
-    return "Card(name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
-  }
-
-}
-
-class Player{
-  int _money = 1;
-  int _health = 20;
-  String _username;
-
-  List<Card> cardDeck = [];
-  List<Card> cardOnField = [];
-  List<Card> cardOnHand = [];
-
-  Player(this._username);
-
-  void addCardToDeck(Card c){
-    if (cardDeck.length < 26) {
-      cardDeck.add(c);
-    }
-  }
-
-  void addCardToField(Card c){
-    if (cardOnField.length < 7){
-      cardOnField.add(c);
-    }
-  }
-
-  void addCardToHand(Card c){
-    if(cardDeck.isNotEmpty){
-      cardOnHand.add(c);
-    }
-  }
-
-  void deleteCardFromDeck(Card c){
-    cardDeck.remove(c);
-  }
-
-  void deleteCardFromField(Card c){
-    cardOnField.remove(c);
-  }
-
-  void deleteCardFromHand(Card c){
-    cardOnHand.remove(c);
-  }
-
-  void turnEnd(Player other){
-    other._money++;
-    if (cardDeck.isNotEmpty && cardOnHand.length < 10) {
-      Card drawnCard = cardDeck.removeLast();
-      addCardToHand(drawnCard);
-    }
-  }
-
-  int get health => _health;
-
-  set health(int value) {
-    _health = value.clamp(0, 20);
-  }
-
-  int get money => _money;
-
-  set money(int value) {
-    _money = value.clamp(0, 10);
-  }
-
-  void surrender(){
-    print("end game");
-  }
-
-  String toString() {
-    return "User(username: $_username, health: $_health, money: $_money, "
-        "deck: ${cardDeck.length} cards, field: ${cardOnField.length} cards, hand: ${cardOnHand.length} cards)";
-  }
-}
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -140,6 +20,7 @@ class GamePage extends StatefulWidget {
 class _GamePageState extends State<GamePage> {
   MainService gameInstance = MainService();
   bool _isMyTurn = true;
+  bool _isWin = false;
 
   final _authentication = FirebaseAuth.instance;
   User? loggedUser;
@@ -147,8 +28,8 @@ class _GamePageState extends State<GamePage> {
   String? docId;
   StreamSubscription<DocumentSnapshot>? matchNewSubs;
   FirebaseDatabase database = FirebaseDatabase.instance;
-  List<Card> deck = [];
-  List<Card> myHandCards = [];
+  List<Warrior> deck = [];
+  List<Warrior> myHandCards = [];
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
@@ -164,10 +45,10 @@ class _GamePageState extends State<GamePage> {
     DataSnapshot snapshot = await database.ref("userDeck/${userId}").ref.get();
     Map<dynamic, dynamic> values = snapshot.value as Map<dynamic, dynamic>;
 
-    List<Card> fetchedCards = [];
+    List<Warrior> fetchedCards = [];
 
     values.forEach((key, value){
-      final card = Card(
+      final warrior = Warrior(
           value['name'],
           value['cost'],
           value['hp'],
@@ -175,7 +56,7 @@ class _GamePageState extends State<GamePage> {
           value['type'],
           value['id']
       );
-      deck.add(card);
+      deck.add(warrior);
 
       setState(() {
         deck = fetchedCards; // 상태 업데이트
@@ -206,11 +87,11 @@ class _GamePageState extends State<GamePage> {
     } while (index1 == index2);
 
     // 선택된 카드
-    Card card1 = deck[index1];
-    Card card2 = deck[index2];
+    Warrior warrior1 = deck[index1];
+    Warrior warrior2 = deck[index2];
 
-    myHandCards.add(card1);
-    myHandCards.add(card2);
+    myHandCards.add(warrior1);
+    myHandCards.add(warrior2);
 
     try{
       print("덱 카드 저장 직전");
@@ -219,14 +100,14 @@ class _GamePageState extends State<GamePage> {
           'onHand' :
             {
               'Card1': {
-                'id': card1._id, // 카드의 id 속성
-                'name': card1.name, // 카드의 name 속성
-                'attack': card1.atk, // 카드의 attack 속성
+                'id': warrior1.id, // 카드의 id 속성
+                'name': warrior1.name, // 카드의 name 속성
+                'attack': warrior1.atk, // 카드의 attack 속성
               },
               'Card2': {
-                'id': card2._id,
-                'name': card2.name,
-                'attack': card2.atk,
+                'id': warrior2.id,
+                'name': warrior2.name,
+                'attack': warrior2.atk,
               },
             },
         }
@@ -268,7 +149,10 @@ class _GamePageState extends State<GamePage> {
     matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
       print('docId는 다음과 같습니다' + docId);
       if(!docSnapshot.exists){
-        _showVictoryPopup();
+        _isWin = true;
+        if(_isWin == true){
+          _showVictoryPopup();
+        }
       }
       setState(() {
 
@@ -450,13 +334,15 @@ class _GamePageState extends State<GamePage> {
               children: [
                 ElevatedButton(
                   onPressed: ()async{
+                    setState(() {
+                      _isWin = false;
+                    });
                     stopSubs();
                     await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
 
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    //Navigator.pop(context); Matching Page 넣으면 주석 빼기
-                    //Navigator.pop(context);
+                    Navigator.popUntil(context, ModalRoute.withName('/mainpage'));
                     gameInstance = MainService();
                   },
                   child: const Text('네'),
@@ -494,9 +380,9 @@ class _GamePageState extends State<GamePage> {
 
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    //Navigator.pop(context); Matching Page 넣으면 주석 빼기
-                    //Navigator.pop(context);
-                    //Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
                   },
                   child: const Icon(Icons.close)
                 )
