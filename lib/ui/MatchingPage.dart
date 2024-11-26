@@ -168,7 +168,7 @@ class _MatchedPageState extends State<MatchedPage> {
 
     // 5초 후에 다른 페이지로 이동
     _timer = Timer(Duration(seconds: 5), () {
-      Navigator.pushNamed(context, '/gamepage', arguments: docId);
+      Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: widget.docId)));
     });
   }
 

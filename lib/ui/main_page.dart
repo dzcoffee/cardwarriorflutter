@@ -41,7 +41,7 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/splashpage': (context) => const SplashPage(),
         '/mainpage': (context) => const MainPage(),
-        '/gamepage': (context) => const GamePage(),
+        //'/gamepage': (context) => const GamePage(),
         '/custompage': (context) => const CustomizingPage(),
         '/optionpage': (context) => const OptionPage(),
         '/matchingpage' : (context) => const MatchingPage()

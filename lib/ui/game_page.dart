@@ -11,7 +11,8 @@ import 'package:card_warrior/game_logic.dart';
 
 
 class GamePage extends StatefulWidget {
-  const GamePage({super.key});
+  const GamePage({required this.docId});
+  final String docId;
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -19,13 +20,15 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   MainService gameInstance = MainService();
-  bool _isMyTurn = true;
+  bool? _isMyTurn;
   bool _isWin = false;
+  Timer? _timer; // 타이머 변수
 
   final _authentication = FirebaseAuth.instance;
   User? loggedUser;
   String? userId = '';
   String? docId;
+  String? matchedUserId;
   StreamSubscription<DocumentSnapshot>? matchNewSubs;
   FirebaseDatabase database = FirebaseDatabase.instance;
   List<Warrior> deck = [];
@@ -35,9 +38,11 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    docId = widget.docId;
     getCurrentUser();
     userId = loggedUser?.email?.split('@').first;
     _fetchData();
+    listenToNewMatch(docId!);
   }
 
   Future<void> _fetchData() async {
@@ -47,7 +52,7 @@ class _GamePageState extends State<GamePage> {
 
     List<Warrior> fetchedCards = [];
 
-    values.forEach((key, value){
+    values.forEach((key, value) async {
       final warrior = Warrior(
           value['name'],
           value['cost'],
@@ -64,9 +69,56 @@ class _GamePageState extends State<GamePage> {
       });
       print('덱은 다음과 같음 : ${deck}');
       if(deck.length == 2){
-        saveRandomCardsOnHand();
+        await saveRandomCardsOnHand();
+
       }
     });
+  }
+
+  Future<void> _getMatchedUserId() async {
+    DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
+
+    print('docsnapshot 있음? ${docSnapshot['userId']}');
+    if(docSnapshot.exists){ // matchedUserId 확인
+      matchedUserId = docSnapshot['matchedUserId'];
+      if(matchedUserId == userId){ // matchedUserId가 나면 userId 받아오기
+        matchedUserId = docSnapshot['userId'];
+        _isMyTurn = true;
+        try{
+          Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+          // userId와 matchedUserId의 기존 객체 가져오기
+          Map<String, dynamic> matchedUserObj = data[userId] ?? {};
+          matchedUserObj['isMyTurn'] = true; // 또는 필요한 값을 설정
+
+          // 업데이트 수행
+          await firestore.collection('matches').doc(docId).update({
+            '${userId}': matchedUserObj,
+          });
+          print('턴 업데이트 완료');
+          _showYourTurn();
+        }catch(e){
+          print(e);
+        }
+      }else{ //내가 userId면
+        _isMyTurn = false;
+        try{
+          Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+          // userId와 matchedUserId의 기존 객체 가져오기
+          Map<String, dynamic> userObject = data[userId] ?? {};
+          userObject['isMyTurn'] = false; // 또는 필요한 값을 설정
+
+          // 업데이트 수행
+          await firestore.collection('matches').doc(docId).update({
+            '${userId}': userObject,
+          });
+          print('턴 업데이트 완료');
+        }catch(e){
+          print(e);
+        }
+      }
+    }
   }
 
   Future<void> saveRandomCardsOnHand() async {
@@ -96,22 +148,30 @@ class _GamePageState extends State<GamePage> {
     try{
       print("덱 카드 저장 직전");
       await firestore.collection('matches').doc(docId).update({
-        '${userId}': {
-          'onHand' :
+        '${userId}':
+          {
+            'onHand' :
             {
               'Card1': {
                 'id': warrior1.id, // 카드의 id 속성
                 'name': warrior1.name, // 카드의 name 속성
                 'attack': warrior1.atk, // 카드의 attack 속성
+                'cost' : warrior1.cost,
+                'type' : warrior1.type,
+                'hp' : warrior1.hp,
               },
               'Card2': {
                 'id': warrior2.id,
                 'name': warrior2.name,
                 'attack': warrior2.atk,
+                'cost' : warrior2.cost,
+                'type' : warrior2.type,
+                'hp' : warrior2.hp,
               },
             },
-        }
+          }
       });
+      _getMatchedUserId(); // 다 가져오면 턴 정하기
     }catch(e){
       print(e);
     }
@@ -134,31 +194,26 @@ class _GamePageState extends State<GamePage> {
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 여기서 arguments를 받아올 수 있습니다
-    final String? arguments = ModalRoute.of(context)?.settings.arguments as String?;
-    if (arguments != null) {
-      docId = arguments; // docId 변수에 저장
-      listenToNewMatch(docId!);
-    }
-  }
-
-  void listenToNewMatch(String docId) { //여기서 FireStore값에 따라 상태 업데이트
-    matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
-      print('docId는 다음과 같습니다' + docId);
-      if(!docSnapshot.exists){
-        _isWin = true;
-        if(_isWin == true){
-          _showVictoryPopup();
+    void listenToNewMatch(String docId) { //여기서 FireStore값에 따라 상태 업데이트
+      matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
+        print('docId는 다음과 같습니다' + docId);
+        if(!docSnapshot.exists){
+          _isWin = true;
+          if(_isWin == true){
+            _showVictoryPopup();
+          }
         }
-      }
-      setState(() {
+
+        Map<String, dynamic> data = docSnapshot['${userId}'];
+        if(data['isMyTurn'] == true && _isMyTurn != true){
+          _showYourTurn();
+          setState(() {
+            _isMyTurn == true;
+          });
+        }
 
       });
-    });
-  }
+    }
 
   void stopSubs(){
     if(matchNewSubs != null){
@@ -193,10 +248,32 @@ class _GamePageState extends State<GamePage> {
                 width: 75,
                 height: 40,
                 child: ElevatedButton(
-                  onPressed: (){
+                  onPressed: () async {
                     setState(() {
                       _isMyTurn = false;
                     });
+
+                    try{
+                      DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
+                      if(docSnapshot.exists){
+                        Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+                        // userId와 matchedUserId의 기존 객체 가져오기
+                        Map<String, dynamic> userObj = data[userId] ?? {};
+                        Map<String, dynamic> matchedUserObj = data[matchedUserId] ?? {};
+
+                        userObj['isMyTurn'] = false; // 또는 필요한 값을 설정
+                        matchedUserObj['isMyTurn'] = true; // 또는 필요한 값을 설정
+
+                        await firestore.collection('matches').doc(docId).update({
+                          '${userId}': userObj,
+                          '${matchedUserId}': matchedUserObj,
+                        });
+                      }
+                      
+                    }catch(e){
+                      print(e);
+                    }
                   },
                   child: Text('내 턴 종료'),
                 ),
@@ -340,15 +417,17 @@ class _GamePageState extends State<GamePage> {
                     stopSubs();
                     await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
 
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.popUntil(context, ModalRoute.withName('/mainpage'));
                     gameInstance = MainService();
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+
                   },
                   child: const Text('네'),
                 ),
                 ElevatedButton(
-                  onPressed: (){
+                    onPressed: (){
                     Navigator.pop(context);
                   },
                   child: const Text('아니오'),
@@ -382,10 +461,28 @@ class _GamePageState extends State<GamePage> {
                     Navigator.pop(context);
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    Navigator.pop(context);
+
                   },
                   child: const Icon(Icons.close)
                 )
+              ],
+            ),
+          );
+        }
+    );
+  }
+  
+  void _showYourTurn() {
+    showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context){
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Expanded(
+                    child: Text('내 턴', textAlign: TextAlign.center)
+                ),
               ],
             ),
           );
