@@ -33,6 +33,9 @@ class _GamePageState extends State<GamePage> {
   FirebaseDatabase database = FirebaseDatabase.instance;
   List<Warrior> deck = [];
   List<Warrior> myHandCards = [];
+  List<Warrior> yourHandCards = [];
+  List<Warrior> myFieldCards = [];
+  List<Warrior> yourFieldCards = [];
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
@@ -42,7 +45,6 @@ class _GamePageState extends State<GamePage> {
     getCurrentUser();
     userId = loggedUser?.email?.split('@').first;
     _fetchData();
-    listenToNewMatch(docId!);
   }
 
   Future<void> _fetchData() async {
@@ -62,17 +64,12 @@ class _GamePageState extends State<GamePage> {
           value['id']
       );
       deck.add(warrior);
-
-      setState(() {
-        deck = fetchedCards; // 상태 업데이트
-
-      });
-      print('덱은 다음과 같음 : ${deck}');
-      if(deck.length == 2){
-        await saveRandomCardsOnHand();
-
-      }
     });
+    print('덱은 다음과 같음 : ${deck}');
+    if(deck.length >= 3){
+      await saveRandomCardsOnHand();
+
+    }
   }
 
   Future<void> _getMatchedUserId() async {
@@ -96,7 +93,8 @@ class _GamePageState extends State<GamePage> {
             '${userId}': matchedUserObj,
           });
           print('턴 업데이트 완료');
-          _showYourTurn();
+          _showMyTurn();
+          _drawWarriorFromDeck();
         }catch(e){
           print(e);
         }
@@ -114,6 +112,9 @@ class _GamePageState extends State<GamePage> {
             '${userId}': userObject,
           });
           print('턴 업데이트 완료');
+          _showYourTurn();
+
+          listenToNewMatch(docId!);
         }catch(e){
           print(e);
         }
@@ -131,45 +132,66 @@ class _GamePageState extends State<GamePage> {
 
     // 랜덤 인덱스 생성
     int index1 = random.nextInt(deck.length);
-    int index2;
+    int index2, index3;
 
     // 중복되지 않는 인덱스 생성
     do {
       index2 = random.nextInt(deck.length);
     } while (index1 == index2);
 
+    do {
+      index3 = random.nextInt(deck.length);
+    } while (index1 == index3 || index2 == index3);
+
     // 선택된 카드
     Warrior warrior1 = deck[index1];
+    print('warrior1 : ${warrior1}');
     Warrior warrior2 = deck[index2];
+    print('warrior2 : ${warrior2}');
+    Warrior warrior3 = deck[index3];
+    print('warrior3 : ${warrior3}');
 
     myHandCards.add(warrior1);
     myHandCards.add(warrior2);
+    myHandCards.add(warrior3);
+
+    deck.remove(warrior1);
+    deck.remove(warrior2);
+    deck.remove(warrior3);
 
     try{
       print("덱 카드 저장 직전");
       await firestore.collection('matches').doc(docId).update({
         '${userId}':
+        {
+          'onHand' :
           {
-            'onHand' :
-            {
-              'Card1': {
-                'id': warrior1.id, // 카드의 id 속성
-                'name': warrior1.name, // 카드의 name 속성
-                'attack': warrior1.atk, // 카드의 attack 속성
-                'cost' : warrior1.cost,
-                'type' : warrior1.type,
-                'hp' : warrior1.hp,
-              },
-              'Card2': {
-                'id': warrior2.id,
-                'name': warrior2.name,
-                'attack': warrior2.atk,
-                'cost' : warrior2.cost,
-                'type' : warrior2.type,
-                'hp' : warrior2.hp,
-              },
+            'Card${warrior1.id}': {
+              'id': warrior1.id, // 카드의 id 속성
+              'name': warrior1.name, // 카드의 name 속성
+              'attack': warrior1.atk, // 카드의 attack 속성
+              'cost' : warrior1.cost,
+              'type' : warrior1.type,
+              'hp' : warrior1.hp,
             },
-          }
+            'Card${warrior2.id}': {
+              'id': warrior2.id,
+              'name': warrior2.name,
+              'attack': warrior2.atk,
+              'cost' : warrior2.cost,
+              'type' : warrior2.type,
+              'hp' : warrior2.hp,
+            },
+            'Card${warrior3.id}': {
+              'id': warrior3.id, // 카드의 id 속성
+              'name': warrior3.name, // 카드의 name 속성
+              'attack': warrior3.atk, // 카드의 attack 속성
+              'cost' : warrior3.cost,
+              'type' : warrior3.type,
+              'hp' : warrior3.hp,
+            },
+          },
+        }
       });
       _getMatchedUserId(); // 다 가져오면 턴 정하기
     }catch(e){
@@ -188,32 +210,107 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+  Future<void> _drawWarriorFromDeck() async {
+    print('덱 길이 : ${deck.length}');
+    final random = Random();
+    int index = random.nextInt(deck.length);
+    Warrior warrior = deck[index];
+    myHandCards.add(warrior);
+    deck.removeAt(index);
+
+    DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+    // userId와 matchedUserId의 기존 객체 가져오기
+    Map<String, dynamic> userObj = data[userId] ?? {};
+
+    if (userObj['onHand'] == null) {
+      userObj['onHand'] = [];
+    }
+    userObj['onHand']['Card${warrior.id}'] = {
+      'id': warrior.id, // 카드의 id 속성
+      'name': warrior.name, // 카드의 name 속성
+      'attack': warrior.atk, // 카드의 attack 속성
+      'cost' : warrior.cost,
+      'type' : warrior.type,
+      'hp' : warrior.hp,
+    };
+
+    await firestore.collection('matches').doc(docId).update({
+      '${userId}': userObj,
+    });
+
+  }
+
+  Future<void> _moveWarriorHandToField(int indexWhy) async{
+    final random = Random();
+    int indexRandom = random.nextInt(myHandCards.length); // 이 index는 나중에 함수 호출 할 때 index 넣어줘야 함.
+    print('내 핸드 카드 : ${myHandCards}');
+
+    Warrior warriorInHand = myHandCards[indexRandom];
+    myFieldCards.add(warriorInHand);
+    myHandCards.removeAt(indexRandom);
+    print('인 핸드에서 카드로 : ${warriorInHand}');
+
+    DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
+    Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+
+    // userId와 matchedUserId의 기존 객체 가져오기
+    Map<String, dynamic> userObj = data[userId] ?? {};
+
+    print('${userObj}');
+    // onHand에서 카드 삭제
+    if (userObj['onHand'] != null && userObj['onHand'] is Map) {
+      // 카드 ID에 해당하는 키를 사용하여 삭제
+      String cardKey = 'Card${warriorInHand.id}';
+      userObj['onHand'].remove(cardKey); // Card${id} 형식으로 키를 사용하여 삭제
+    }
+
+
+
+    if (userObj['onField'] == null) {
+      userObj['onField'] = {};
+    }
+    userObj['onField']['Card${warriorInHand.id}'] = {
+      'id': warriorInHand.id, // 카드의 id 속성
+      'name': warriorInHand.name, // 카드의 name 속성
+      'attack': warriorInHand.atk, // 카드의 attack 속성
+      'cost' : warriorInHand.cost,
+      'type' : warriorInHand.type,
+      'hp' : warriorInHand.hp,
+    };
+
+    await firestore.collection('matches').doc(docId).update({
+      '${userId}': userObj,
+    });
+
+  }
+
 
   @override
   void dispose(){
     super.dispose();
   }
 
-    void listenToNewMatch(String docId) { //여기서 FireStore값에 따라 상태 업데이트
-      matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
-        print('docId는 다음과 같습니다' + docId);
-        if(!docSnapshot.exists){
-          _isWin = true;
-          if(_isWin == true){
-            _showVictoryPopup();
-          }
+  void listenToNewMatch(String docId) { //여기서 FireStore값에 따라 상태 업데이트
+    matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docId).snapshots().listen((docSnapshot) {
+      print('docId는 다음과 같습니다' + docId);
+      if(!docSnapshot.exists){
+        _isWin = true;
+        if(_isWin == true){
+          _showVictoryPopup();
         }
+      }
 
-        Map<String, dynamic> data = docSnapshot['${userId}'];
-        if(data['isMyTurn'] == true && _isMyTurn != true){
-          _showYourTurn();
-          setState(() {
-            _isMyTurn == true;
-          });
-        }
+      Map<String, dynamic> data = docSnapshot['${userId}'];
+      if(data['isMyTurn'] == true && _isMyTurn != true){
+        _showMyTurn();
+        _isMyTurn = true;
+        _drawWarriorFromDeck();
+      }
 
-      });
-    }
+    });
+  }
 
   void stopSubs(){
     if(matchNewSubs != null){
@@ -269,6 +366,7 @@ class _GamePageState extends State<GamePage> {
                           '${userId}': userObj,
                           '${matchedUserId}': matchedUserObj,
                         });
+                        _showYourTurn();
                       }
                       
                     }catch(e){
@@ -384,6 +482,7 @@ class _GamePageState extends State<GamePage> {
                 ElevatedButton(
                   onPressed: () {
                     // 여기에 버튼 동작 추가
+                    _moveWarriorHandToField(1);
                   },
                   child: const Text('어떤 기능 버튼'),
                 ),
@@ -472,7 +571,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
   
-  void _showYourTurn() {
+  void _showMyTurn() {
     showDialog(
         context: context,
         barrierDismissible: true,
@@ -488,5 +587,25 @@ class _GamePageState extends State<GamePage> {
           );
         }
     );
+
+  }
+
+  void _showYourTurn() {
+    showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context){
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Expanded(
+                    child: Text('상대 턴', textAlign: TextAlign.center)
+                ),
+              ],
+            ),
+          );
+        }
+    );
+
   }
 }
