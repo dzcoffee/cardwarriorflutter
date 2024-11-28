@@ -468,6 +468,7 @@ class _GamePageState extends State<GamePage> {
                     매칭 페이지 완성되면 지우기
                     await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
                      */
+
                     Navigator.pop(context);
                     Navigator.pop(context);
                     //Navigator.pop(context); Matching Page 넣으면 주석 빼기
