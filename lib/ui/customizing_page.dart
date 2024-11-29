@@ -104,7 +104,6 @@ class _CustomizingPageState extends State<CustomizingPage> {
                       Positioned(
                         top: 8,
                         left: 8,
-                        right: 8,
                         child: Container(
                           padding: EdgeInsets.symmetric(vertical: 4),
                           decoration: BoxDecoration(
