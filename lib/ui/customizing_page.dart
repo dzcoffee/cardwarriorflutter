@@ -101,47 +101,44 @@ class _CustomizingPageState extends State<CustomizingPage> {
                   ),
                   child: Stack(
                     children: [
-                      Positioned(
-                        top: 8,
-                        left: 8,
+                      Align(
+                        alignment: Alignment.topLeft, // 카드 상단 왼쪽
                         child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Center(
-                            child: Text(
-                              '${card.cost}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                          child: Text(
+                            '${card.cost}',
+                            style: TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
                             ),
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        right: 8,
+                      Align(
+                        alignment: Alignment.bottomCenter, // 카드 하단 중앙
                         child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 4),
-                          child: Center(
-                            child: Text(
-                              '${card.name}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                          margin: EdgeInsets.only(bottom: 7),
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${card.name}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
+                      Align(
+                        alignment: Alignment.bottomLeft, // 카드 하단 왼쪽
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
@@ -150,15 +147,14 @@ class _CustomizingPageState extends State<CustomizingPage> {
                           child: Text(
                             '${card.atk}',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
+                              fontSize: 25,
+                              color: Colors.red,
                             ),
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
+                      Align(
+                        alignment: Alignment.bottomRight, // 카드 하단 오른쪽
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
@@ -167,8 +163,8 @@ class _CustomizingPageState extends State<CustomizingPage> {
                           child: Text(
                             '${card.hp}',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
+                              fontSize: 25,
+                              color: Colors.green,
                             ),
                           ),
                         ),
@@ -178,9 +174,8 @@ class _CustomizingPageState extends State<CustomizingPage> {
                 ),
                 // 선택 표시 (체크 아이콘)
                 if (isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
+                  Align(
+                    alignment: Alignment.topRight, // 카드 상단 오른쪽
                     child: Icon(
                       Icons.check_circle,
                       color: Colors.blue,
