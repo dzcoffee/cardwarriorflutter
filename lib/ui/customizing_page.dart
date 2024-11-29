@@ -74,7 +74,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 3/4,
+          childAspectRatio: 258/378,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),
@@ -82,6 +82,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
         itemBuilder: (context, index){
           final card = cardList[index];
           final isSelected = user.cardDeck.contains(card);
+          int idx = card.id;
           return GestureDetector(
             onTap: () => toggleCardSelection(card), // 카드 선택/해제 토글
             child: Stack(
@@ -89,7 +90,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
                 Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/images/card.png'),
+                      image: AssetImage('assets/images/cards/$idx.JPG'),
                       fit: BoxFit.cover,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -107,7 +108,6 @@ class _CustomizingPageState extends State<CustomizingPage> {
                         child: Container(
                           padding: EdgeInsets.symmetric(vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Center(
@@ -116,7 +116,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -128,17 +128,13 @@ class _CustomizingPageState extends State<CustomizingPage> {
                         right: 8,
                         child: Container(
                           padding: EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
                           child: Center(
                             child: Text(
                               '${card.name}',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -150,14 +146,13 @@ class _CustomizingPageState extends State<CustomizingPage> {
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             '${card.atk}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -168,14 +163,13 @@ class _CustomizingPageState extends State<CustomizingPage> {
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             '${card.hp}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black,
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -202,13 +196,3 @@ class _CustomizingPageState extends State<CustomizingPage> {
     );
   }
 }
-/*
-ListView.builder(
-
-itemBuilder: (context, index){
-return ListTile(
-title: Text(cardList[index].name)
-);
-},
-)
-*/
