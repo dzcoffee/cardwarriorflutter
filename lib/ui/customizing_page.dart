@@ -102,27 +102,31 @@ class _CustomizingPageState extends State<CustomizingPage> {
                   child: Stack(
                     children: [
                       Align(
-                        alignment: Alignment.topLeft, // 카드 상단 왼쪽
+                        alignment: Alignment.topLeft,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            '${card.cost}',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                          child: SizedBox(
+                            width: 20,
+                            child: Text(
+                              '${card.cost}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       Align(
-                        alignment: Alignment.bottomCenter, // 카드 하단 중앙
+                        alignment: Alignment.bottomCenter,
                         child: Container(
                           margin: EdgeInsets.only(bottom: 7),
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
@@ -138,33 +142,43 @@ class _CustomizingPageState extends State<CustomizingPage> {
                         ),
                       ),
                       Align(
-                        alignment: Alignment.bottomLeft, // 카드 하단 왼쪽
+                        alignment: Alignment.bottomLeft,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            '${card.atk}',
-                            style: TextStyle(
-                              fontSize: 25,
-                              color: Colors.red,
+                          child: SizedBox(
+                            width: 20,
+                            child: Text(
+                              '${card.atk}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       Align(
-                        alignment: Alignment.bottomRight, // 카드 하단 오른쪽
+                        alignment: Alignment.bottomRight,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 1, vertical: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            '${card.hp}',
-                            style: TextStyle(
-                              fontSize: 25,
-                              color: Colors.green,
+                          child: SizedBox(
+                            width: 20,
+                            child: Text(
+                              '${card.hp}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
                             ),
                           ),
                         ),
@@ -175,11 +189,11 @@ class _CustomizingPageState extends State<CustomizingPage> {
                 // 선택 표시 (체크 아이콘)
                 if (isSelected)
                   Align(
-                    alignment: Alignment.topRight, // 카드 상단 오른쪽
+                    alignment: Alignment.topRight,
                     child: Icon(
                       Icons.check_circle,
                       color: Colors.blue,
-                      size: 24,
+                      size: 30,
                     ),
                   ),
               ],
