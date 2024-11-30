@@ -535,8 +535,8 @@ class _GamePageState extends State<GamePage> {
                     gameInstance = MainService();
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    //Navigator.pop(context);
+                    //Navigator.pop(context);
 
                   },
                   child: const Text('네'),
@@ -574,8 +574,8 @@ class _GamePageState extends State<GamePage> {
 
                     Navigator.pop(context);
                     Navigator.pop(context);
-                    Navigator.pop(context);
-                    Navigator.pop(context);
+                    //Navigator.pop(context);
+                    //Navigator.pop(context);
 
                   },
                   child: const Icon(Icons.close)
