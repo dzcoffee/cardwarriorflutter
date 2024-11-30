@@ -136,10 +136,10 @@ class _CustomizingPageState extends State<CustomizingPage> {
         itemCount: cardList.length,
         itemBuilder: (context, index){
           final card = cardList[index];
-          final isSelected = user.cardDeck.contains(card);
+          final isSelected = player!.cardDeck.contains(card);
           int idx = card.id;
           return GestureDetector(
-            onTap: () => toggleCardSelection(warriorList), // 카드 선택/해제 토글
+              onTap: () => toggleCardSelection(card), // 카드 선택/해제 토글
             child: Stack(
               children: [
                 Container(
