@@ -379,18 +379,35 @@ class _GamePageState extends State<GamePage> {
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: Container(
-                width: 75,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: (){
-                    setState(() {
-                      _isMyTurn = true;
-                      gameInstance.drawCard();
-                    });
-                  },
-                  child: const Text('상대 턴 종료'),
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 75,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: (){
+                        setState(() {
+                          _isMyTurn = true;
+                          gameInstance.drawCard();
+                        });
+                      },
+                      child: const Text('상대 턴 종료'),
+                    ),
+                  ),
+                  Container(
+                    width: 75,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: (){
+                        setState(() {
+                          gameInstance.putCard();
+                        });
+                      },
+                      child: const Text('카드 내기'),
+                    ),
+                  ),
+                ],
               ),
             ),
             Align(
@@ -402,9 +419,7 @@ class _GamePageState extends State<GamePage> {
                   children: [
                     IconButton(
                       onPressed: () {
-                        if(gameInstance.cards.length > 3) {
-                      gameInstance.MoveLeft();
-                    }
+                        gameInstance.MoveLeft();
                   },
                       icon: const Icon(Icons.arrow_back, size: 40, color: Colors.white),
                     ),
@@ -425,16 +440,14 @@ class _GamePageState extends State<GamePage> {
                     ),
                     IconButton(
                       onPressed: () {
-                        if(gameInstance.cards.length > 3) {
-                      gameInstance.MoveRight();
-                    }
+                        gameInstance.MoveRight();
                   },
                       icon: const Icon(Icons.arrow_forward, size: 40, color: Colors.white),
                     ),
                   ],
                 ),
               ),
-            )
+            ),
           ],
         )
     );
@@ -514,7 +527,10 @@ class _GamePageState extends State<GamePage> {
                       _isWin = false;
                     });
                     stopSubs();
+                    /*
+                    매칭 페이지 완성되면 지우기
                     await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
+                     */
 
                     gameInstance = MainService();
                     Navigator.pop(context);
