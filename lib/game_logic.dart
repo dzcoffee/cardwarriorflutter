@@ -9,7 +9,7 @@ class Warrior{
   int _id;
 
 
-  Warrior(this._id, this._name, this._cost, this._hp, this._atk, this._type);
+  Warrior(this._name, this._cost, this._hp, this._atk, this._type, this._id);
 
   String get name => _name;
   int get cost => _cost;
@@ -41,7 +41,7 @@ class Warrior{
     }
   }
 
-  void attackUser(User player){
+  void attackUser(Player player){
     if(player.cardOnField.isEmpty){
       player._health -= _atk;
     }
@@ -50,9 +50,20 @@ class Warrior{
   String toString() {
     return "Card(id: $_id, name: $_name, cost: $_cost, hp: $_hp, atk: $_atk, type: $_type)";
   }
+
+  Map<String, dynamic> toMap(){
+    return{
+      'name' : name,
+      'cost' : cost,
+      'hp': hp,
+      'attack': _atk,
+      'type': type,
+      'id': id,
+    };
+  }
 }
 
-class User{
+class Player{
   int _money = 1;
   int _health = 20;
   String _username;
@@ -61,7 +72,7 @@ class User{
   List<Warrior> cardOnField = [];
   List<Warrior> cardOnHand = [];
 
-  User(this._username);
+  Player(this._username);
 
   void addCardToDeck(Warrior c){
     if (cardDeck.length < 26) {
@@ -93,7 +104,7 @@ class User{
     cardOnHand.remove(c);
   }
 
-  void turnEnd(User other){
+  void turnEnd(Player other){
     other._money++;
     if (cardDeck.isNotEmpty && cardOnHand.length < 10) {
       Warrior drawnCard = cardDeck.removeLast();
