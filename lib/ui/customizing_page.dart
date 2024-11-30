@@ -74,7 +74,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 3/4,
+          childAspectRatio: 258/378,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
         ),
@@ -82,6 +82,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
         itemBuilder: (context, index){
           final card = cardList[index];
           final isSelected = user.cardDeck.contains(card);
+          int idx = card.id;
           return GestureDetector(
             onTap: () => toggleCardSelection(card), // 카드 선택/해제 토글
             child: Stack(
@@ -89,7 +90,7 @@ class _CustomizingPageState extends State<CustomizingPage> {
                 Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/images/card.png'),
+                      image: AssetImage('assets/images/cards/$idx.JPG'),
                       fit: BoxFit.cover,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -100,82 +101,84 @@ class _CustomizingPageState extends State<CustomizingPage> {
                   ),
                   child: Stack(
                     children: [
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        right: 8,
+                      Align(
+                        alignment: Alignment.topLeft,
                         child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Center(
+                          child: SizedBox(
+                            width: 20,
                             child: Text(
                               '${card.cost}',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.blue,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
-                        right: 8,
+                      Align(
+                        alignment: Alignment.bottomCenter,
                         child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 4),
+                          margin: EdgeInsets.only(bottom: 7),
+                          padding: EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                           decoration: BoxDecoration(
                             color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${card.name}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+                          decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Center(
+                          child: SizedBox(
+                            width: 20,
                             child: Text(
-                              '${card.name}',
+                              '${card.atk}',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                                color: Colors.red,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      Positioned(
-                        bottom: 8,
-                        left: 8,
+                      Align(
+                        alignment: Alignment.bottomRight,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: EdgeInsets.symmetric(horizontal: 1, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(
-                            '${card.atk}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 8,
-                        right: 8,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '${card.hp}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black,
+                          child: SizedBox(
+                            width: 20,
+                            child: Text(
+                              '${card.hp}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
                             ),
                           ),
                         ),
@@ -185,13 +188,12 @@ class _CustomizingPageState extends State<CustomizingPage> {
                 ),
                 // 선택 표시 (체크 아이콘)
                 if (isSelected)
-                  Positioned(
-                    top: 8,
-                    right: 8,
+                  Align(
+                    alignment: Alignment.topRight,
                     child: Icon(
                       Icons.check_circle,
                       color: Colors.blue,
-                      size: 24,
+                      size: 30,
                     ),
                   ),
               ],
@@ -202,13 +204,3 @@ class _CustomizingPageState extends State<CustomizingPage> {
     );
   }
 }
-/*
-ListView.builder(
-
-itemBuilder: (context, index){
-return ListTile(
-title: Text(cardList[index].name)
-);
-},
-)
-*/
