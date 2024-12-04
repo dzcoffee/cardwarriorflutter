@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
+import 'package:flame/events.dart';
+import 'package:flame/game.dart';
 
 class HealthComponent extends PositionComponent {
   final double initialHealth;
@@ -35,8 +38,8 @@ class HealthComponent extends PositionComponent {
       ..style = PaintingStyle.fill;
 
     // 원형 바 그리기
-    final rect = Rect.fromCircle(center: Offset(position.x + 75, position.y + 75), radius: 50);
-    canvas.drawCircle(Offset(position.x + 75, position.y + 75), 50, paint);
+    final rect = Rect.fromCircle(center: Offset(position.x + 75, position.y + 35), radius: 50);
+    canvas.drawCircle(Offset(position.x + 75, position.y + 35), 50, paint);
 
     // 체력 비율에 따른 원형 바 채우기
     final sweepAngle = 2 * 3.141592653589793 * progress;
@@ -53,7 +56,7 @@ class HealthComponent extends PositionComponent {
       textDirection: TextDirection.ltr,
     )
       ..layout()
-      ..paint(canvas, Offset(position.x + 45, position.y + 60));
+      ..paint(canvas, Offset(position.x + 45, position.y + 25));
   }
 }
 
@@ -90,8 +93,8 @@ class CostComponent extends PositionComponent {
       ..style = PaintingStyle.fill;
 
     // 원형 바 그리기
-    final rect = Rect.fromCircle(center: Offset(position.x + 75, position.y + 75), radius: 50);
-    canvas.drawCircle(Offset(position.x + 75, position.y + 75), 50, paint);
+    final rect = Rect.fromCircle(center: Offset(position.x + 75, position.y + 35), radius: 50);
+    canvas.drawCircle(Offset(position.x + 75, position.y + 35), 50, paint);
 
     // 코스트 비율에 따른 원형 바 채우기
     final sweepAngle = 2 * 3.141592653589793 * progress;
@@ -108,23 +111,24 @@ class CostComponent extends PositionComponent {
       textDirection: TextDirection.ltr,
     )
       ..layout()
-      ..paint(canvas, Offset(position.x + 45, position.y + 60));
+      ..paint(canvas, Offset(position.x + 45, position.y + 25));
   }
 }
 
 
-class CardComponent extends PositionComponent {
+class CardComponent extends PositionComponent with TapCallbacks{
+  late World world;
   final SpriteComponent cardSprite;
   late RectangleComponent glowEffect;
   bool isGlowing = false; // 카드가 강조 상태인지 여부
-  bool isVisible = false;
   late int myIndex;
 
-  CardComponent({required this.cardSprite});
+  CardComponent({required this.cardSprite}) : super(priority: 1);
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
+
 
     // 빛나는 효과 초기화
     glowEffect = RectangleComponent(
@@ -135,8 +139,17 @@ class CardComponent extends PositionComponent {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10.0,
     );
+
+
     add(cardSprite); // 카드 스프라이트 추가
   }
+
+  @override
+  void onTapUp(TapUpEvent event){
+    super.onTapUp(event);
+    print('hi');
+  }
+
 
   @override
   void render(Canvas canvas) {
@@ -145,7 +158,5 @@ class CardComponent extends PositionComponent {
     }
     super.render(canvas);
   }
-
-
 
 }

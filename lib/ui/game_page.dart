@@ -20,6 +20,7 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   MainService gameInstance = MainService();
+  int testValue = 0;
   bool? _isMyTurn;
   bool _isWin = false;
   Timer? _timer; // 타이머 변수
@@ -341,6 +342,33 @@ class _GamePageState extends State<GamePage> {
             ),
             Align(
               alignment: Alignment.centerRight,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 75,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: (){
+                          setState(() {
+                            gameInstance.myAttack();
+                          });
+                        },
+                        child: Text('나의 공격'),
+                      ),
+                    ),
+                    Container(
+                      width: 75,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: (){
+                          setState(() {
+                            gameInstance.yourAttack();
+                          });
+                        },
+                        child: Text('상대방의 공격'),
+                      ),
+                    ),
               child: Container(
                 width: 75,
                 height: 40,
@@ -374,8 +402,23 @@ class _GamePageState extends State<GamePage> {
                     }
                   },
                   child: Text('내 턴 종료'),
+                      ),
+                    ),
+                    Container(
+                      width: 75,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: (){
+                          setState(() {
+                            _isMyTurn = true;
+                            gameInstance.drawMyCard();
+                          });
+                        },
+                        child: const Text('상대 턴 종료'),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
             ),
             Align(
               alignment: Alignment.centerLeft,
@@ -388,11 +431,10 @@ class _GamePageState extends State<GamePage> {
                     child: ElevatedButton(
                       onPressed: (){
                         setState(() {
-                          _isMyTurn = true;
-                          gameInstance.drawCard();
+                          gameInstance.putMyCard();
                         });
                       },
-                      child: const Text('상대 턴 종료'),
+                      child: const Text('내 카드 내기'),
                     ),
                   ),
                   Container(
@@ -401,17 +443,21 @@ class _GamePageState extends State<GamePage> {
                     child: ElevatedButton(
                       onPressed: (){
                         setState(() {
-                          gameInstance.putCard();
-                        });
+                          ///나중에 testValue대신 서버에서 전달해준 index 삽입
+                          if(testValue<6) {
+                        gameInstance.putYourCard(testValue++, 'card.png');
+                      }
+                    });
                       },
-                      child: const Text('카드 내기'),
+                      child: const Text('상대방 카드 내기'),
                     ),
                   ),
                 ],
               ),
             ),
+            ///내 손안의 카드 방향키
             Align(
-              alignment: Alignment.bottomCenter,
+              alignment: Alignment(0.0, 0.75),
               child: Container(
                 height: 100,
                 child: Row(
@@ -426,22 +472,67 @@ class _GamePageState extends State<GamePage> {
                     Container(
                       width: 150,
                       height: 70,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 2),
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.grey[900],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '카드 놓는 곳',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
                     ),
                     IconButton(
                       onPressed: () {
                         gameInstance.MoveRight();
                   },
+                      icon: const Icon(Icons.arrow_forward, size: 40, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ///상대방 필드 위 카드
+            Align(
+              alignment: Alignment(0.0, -0.5), // x: 0.0 (가로 중앙), y: -0.5 (위쪽 중간)
+              child: Container(
+                height: 100,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        gameInstance.yourFieldLeft();
+                      },
+                      icon: const Icon(Icons.arrow_back, size: 40, color: Colors.white),
+                    ),
+                    Container(
+                      width: 300,
+                      height: 70,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        gameInstance.yourFieldRight();
+                      },
+                      icon: const Icon(Icons.arrow_forward, size: 40, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            ///내 필드 위 카드
+            Align(
+              alignment: Alignment(0.0, 0.3), // x: 0.0 (가로 중앙), y: -0.5 (위쪽 중간)
+              child: Container(
+                height: 100,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        gameInstance.myFieldLeft();
+                      },
+                      icon: const Icon(Icons.arrow_back, size: 40, color: Colors.white),
+                    ),
+                    Container(
+                      width: 300,
+                      height: 70,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        gameInstance.myFieldRight();
+                      },
                       icon: const Icon(Icons.arrow_forward, size: 40, color: Colors.white),
                     ),
                   ],
