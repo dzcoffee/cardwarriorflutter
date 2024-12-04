@@ -5,16 +5,11 @@ import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flame/camera.dart';
-import 'package:flame_noise/flame_noise.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
 
 class MainService extends FlameGame{
-  late CameraComponent cameraComponent;
-  final Random random = Random();
-  late World world;
 
   late final screenWidth;
   late final screenHeight;
@@ -54,8 +49,12 @@ class MainService extends FlameGame{
   int myFieldIndex = -1;
   int yourFieldIndex = -1;
 
+  late Vector2 yourDrawPosition;
+  late Vector2 myDrawPosition;
+
   late HealthComponent oppoHp;
   late CostComponent oppoCost;
+
 
   //게임 인스턴스 생성될 때 실행하는 함수
   @override
@@ -64,6 +63,10 @@ class MainService extends FlameGame{
     screenHeight = size.y;
     cardPositions = cardPositions.map((num)=> num * screenWidth).toList();
     myPositionY = screenHeight * 0.85;
+
+    //플레이어 직접 공격 위치 설정
+    yourDrawPosition = Vector2(screenWidth * 0.4, size.y * 0.03);
+    myDrawPosition = Vector2(screenWidth * 0.4, size.y * 0.8);
 
     myFieldCardX = myFieldCardX.map((num)=> num * screenWidth).toList();
     myFieldCardY = myFieldCardY.map((num)=> num * screenHeight).toList();
@@ -76,13 +79,6 @@ class MainService extends FlameGame{
     await super.onLoad();
 
 
-    //공격시 화면 흔들리는 효과에 사용할 예정
-    /*
-    world = World();
-    add(world);
-    cameraComponent = CameraComponent(world: world)..viewfinder.visibleGameSize = Vector2(screenWidth, screenHeight);
-    add(cameraComponent);
-    */
 
     health = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 400);
@@ -126,7 +122,6 @@ class MainService extends FlameGame{
 
     enlargedImage = myCards[myCurrentIndex].cardSprite;
     enlargedCard = CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite));
-    add(enlargedCard);
 
   }
 
@@ -180,8 +175,6 @@ class MainService extends FlameGame{
       });
     }
     myCards[--myCurrentIndex].isGlowing = true;
-
-    exhibitCard();
   }
 
   ///오른쪽 카드 선택
@@ -210,8 +203,6 @@ class MainService extends FlameGame{
 
     }
     myCards[++myCurrentIndex].isGlowing = true;
-
-    exhibitCard();
   }
 
 
@@ -219,8 +210,8 @@ class MainService extends FlameGame{
   SpriteComponent cloneCardSprite(SpriteComponent cardSprite){
     return SpriteComponent(
       sprite: cardSprite.sprite,
-      size: cardSprite.size * 1.2,
-      position: Vector2(screenWidth * 0.4, screenHeight * 0.7)
+      size: cardSprite.size * 3.0,
+      position: Vector2(screenWidth * 0.2, screenHeight * 0.3)
     );
   }
 
@@ -342,7 +333,7 @@ class MainService extends FlameGame{
     myCards[myCurrentIndex].add(move(Vector2(
         myFieldCardX[myFieldIndex],
         myFieldCardY[myFieldIndex]),
-        0.3));
+        0.1));
     myExistField[card] = myFieldIndex;
     myCards.removeAt(myCurrentIndex);
     Future.delayed(Duration(milliseconds: 300), (){
@@ -374,7 +365,6 @@ class MainService extends FlameGame{
       myCards[myCurrentIndex].isGlowing = true;
 
       putBack();
-      exhibitCard();
     });
   }
 
@@ -504,7 +494,16 @@ class MainService extends FlameGame{
     card.priority = 100;
     card.add(move(Vector2(myFieldCardX[myFieldIndex], myFieldCardY[myFieldIndex]+20), 0.2));
     Future.delayed(Duration(milliseconds: 200), (){
-      card.add(move(Vector2(yourFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex] + 20), 0.2));
+      if(yourExistField.length != 0) {
+        card.add(move(
+            Vector2(yourFieldCardX[yourFieldIndex],
+                yourFieldCardY[yourFieldIndex] + 20),
+            0.2));
+      } else{
+        card.add(move(
+            yourDrawPosition,
+            0.2));
+      }
       Future.delayed(Duration(milliseconds: 400), (){
         card.add(move(Vector2(myFieldCardX[myFieldIndex], myFieldCardY[myFieldIndex]), 0.2));
         card.priority = priority;
@@ -518,7 +517,16 @@ class MainService extends FlameGame{
     card.priority = 100;
     card.add(move(Vector2(yourFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex]-20), 0.2));
     Future.delayed(Duration(milliseconds: 200), (){
-      card.add(move(Vector2(myFieldCardX[myFieldIndex], myFieldCardY[myFieldIndex] - 20), 0.2));
+      if(myExistField.length != 0) {
+        card.add(move(
+            Vector2(
+                myFieldCardX[myFieldIndex], myFieldCardY[myFieldIndex] - 20),
+            0.2));
+      } else{
+        card.add(move(
+            myDrawPosition,
+            0.2));
+      }
       Future.delayed(Duration(milliseconds: 400), (){
         card.add(move(Vector2(myFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex]), 0.2));
         card.priority = priority;

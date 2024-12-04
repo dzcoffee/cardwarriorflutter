@@ -369,39 +369,39 @@ class _GamePageState extends State<GamePage> {
                         child: Text('상대방의 공격'),
                       ),
                     ),
-              child: Container(
-                width: 75,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    setState(() {
-                      _isMyTurn = false;
-                    });
+                    Container(
+                      width: 75,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          setState(() {
+                            _isMyTurn = false;
+                          });
 
-                    try{
-                      DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
-                      if(docSnapshot.exists){
-                        Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
+                          try{
+                            DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
+                            if(docSnapshot.exists){
+                              Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
 
-                        // userId와 matchedUserId의 기존 객체 가져오기
-                        Map<String, dynamic> userObj = data[userId] ?? {};
-                        Map<String, dynamic> matchedUserObj = data[matchedUserId] ?? {};
+                              // userId와 matchedUserId의 기존 객체 가져오기
+                              Map<String, dynamic> userObj = data[userId] ?? {};
+                              Map<String, dynamic> matchedUserObj = data[matchedUserId] ?? {};
 
-                        userObj['isMyTurn'] = false; // 또는 필요한 값을 설정
-                        matchedUserObj['isMyTurn'] = true; // 또는 필요한 값을 설정
+                              userObj['isMyTurn'] = false; // 또는 필요한 값을 설정
+                              matchedUserObj['isMyTurn'] = true; // 또는 필요한 값을 설정
 
-                        await firestore.collection('matches').doc(docId).update({
-                          '${userId}': userObj,
-                          '${matchedUserId}': matchedUserObj,
-                        });
-                        _showYourTurn();
-                      }
-                      
-                    }catch(e){
-                      print(e);
-                    }
-                  },
-                  child: Text('내 턴 종료'),
+                              await firestore.collection('matches').doc(docId).update({
+                                '${userId}': userObj,
+                                '${matchedUserId}': matchedUserObj,
+                              });
+                              _showYourTurn();
+                            }
+
+                          }catch(e){
+                            print(e);
+                          }
+                        },
+                        child: Text('내 턴 종료'),
                       ),
                     ),
                     Container(
