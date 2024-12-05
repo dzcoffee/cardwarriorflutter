@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:card_warrior/game_logic.dart';
 import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
@@ -83,8 +84,8 @@ class MainService extends FlameGame{
     health = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 400);
     add(health);
-    cost = CostComponent(initialCost: 20, maxCost: 20)
-    ..position = Vector2(160, 400);
+    cost = CostComponent(initialCost: 0, maxCost: 10)
+    ..position = Vector2(140, 300);
     add(cost);
 
     //상대 정보
@@ -95,10 +96,15 @@ class MainService extends FlameGame{
       ..position = Vector2(160, 30);
     add(oppoCost);
 
-    //내 카드 초기화
-    for (int i = 0; i < 3; i++){
-      final sprite = await loadCardImage('card.png');
-      CardComponent card = CardComponent(cardSprite: sprite);
+
+
+  }
+
+  void setCards(List<Warrior> warriorList) async {
+    //카드 초기화
+    for (int i = 0; i < warriorList.length; i++){
+      final sprite = await loadCardImage('cards/${warriorList[i].id}.JPG');
+      CardComponent card = CardComponent(cardSprite: sprite, warrior: warriorList[i]);
       if(i < 3) {
         card.position = Vector2(
             cardPositions[i+1],
@@ -120,8 +126,10 @@ class MainService extends FlameGame{
     }
 
 
-    enlargedImage = myCards[myCurrentIndex].cardSprite;
-    enlargedCard = CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite));
+    enlargedImage = cards[currentIndex].cardSprite;
+    enlargedCard = CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
+    add(enlargedCard);
+
 
   }
 
@@ -177,7 +185,12 @@ class MainService extends FlameGame{
     myCards[--myCurrentIndex].isGlowing = true;
   }
 
+
+
+
+
   ///오른쪽 카드 선택
+
   void MoveRight(){
     int length = myCards.length;
     if(myCurrentIndex == length - 1) return;
@@ -215,11 +228,13 @@ class MainService extends FlameGame{
     );
   }
 
-  ///선택한 카드 크게 보여주는 함수
-  void exhibitCard() async{
-    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite));
+
+    void exhibitCard() async{
+    print(currentIndex);
+    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
     return;
   }
+
 
   ///상대방 카드 드로우
   void drawYourCard() async{
@@ -235,9 +250,9 @@ class MainService extends FlameGame{
   }
 
   ///카드 드로잉해서 손에 넣는 함수
-  void drawMyCard() async {
-    final sprite = await loadCardImage('card.png');
-    CardComponent card = CardComponent(cardSprite: sprite);
+  void drawMyCard(Warrior warrior) async {
+    final sprite = await loadCardImage('cards/${warrior.id}.JPG');
+    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
     card.position = Vector2(screenWidth * 0.1, size.y * 0.6);
     myCards.add(card);
     add(card);
