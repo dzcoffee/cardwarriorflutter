@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:card_warrior/game_logic.dart';
 import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
@@ -54,8 +55,8 @@ class MainService extends FlameGame{
     health = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 400);
     add(health);
-    cost = CostComponent(initialCost: 20, maxCost: 20)
-    ..position = Vector2(160, 400);
+    cost = CostComponent(initialCost: 0, maxCost: 10)
+    ..position = Vector2(140, 300);
     add(cost);
 
     //상대 정보
@@ -66,10 +67,14 @@ class MainService extends FlameGame{
       ..position = Vector2(160, 30);
     add(oppoCost);
 
+
+  }
+
+  void setCards(List<Warrior> warriorList) async {
     //카드 초기화
-    for (int i = 0; i < 5; i++){
-      final sprite = await loadCardImage('card.png');
-      CardComponent card = CardComponent(cardSprite: sprite);
+    for (int i = 0; i < warriorList.length; i++){
+      final sprite = await loadCardImage('cards/${warriorList[i].id}.JPG');
+      CardComponent card = CardComponent(cardSprite: sprite, warrior: warriorList[i]);
       if(i < 3) {
         card.position = Vector2(
             cardPositions[i+1],
@@ -84,7 +89,7 @@ class MainService extends FlameGame{
     cards[1].isGlowing = true;
 
     enlargedImage = cards[currentIndex].cardSprite;
-    enlargedCard = CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite));
+    enlargedCard = CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
     add(enlargedCard);
 
   }
@@ -137,6 +142,8 @@ class MainService extends FlameGame{
     exhibitCard();
   }
 
+
+
   void MoveRight(){
     int length = cards.length;
     if(currentIndex == length - 1) return;
@@ -174,14 +181,15 @@ class MainService extends FlameGame{
     );
   }
 
-  void exhibitCard() async{
-    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite));
+    void exhibitCard() async{
+    print(currentIndex);
+    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
     return;
   }
 
-  void drawCard() async {
-    final sprite = await loadCardImage('card.png');
-    CardComponent card = CardComponent(cardSprite: sprite);
+  void drawCard(Warrior warrior) async {
+    final sprite = await loadCardImage('cards/${warrior.id}.JPG');
+    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
     card.position = Vector2(screenWidth * 0.1, size.y * 0.6);
     card.myIndex = cards.length;
     cards.add(card);

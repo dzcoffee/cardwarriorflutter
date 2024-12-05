@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:card_warrior/game_service/main_service.dart';
+import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -94,6 +95,7 @@ class _GamePageState extends State<GamePage> {
           });
           print('턴 업데이트 완료');
           _showMyTurn();
+          gameInstance.cost.addCost();
           _drawWarriorFromDeck();
         }catch(e){
           print(e);
@@ -123,7 +125,7 @@ class _GamePageState extends State<GamePage> {
   }
 
   Future<void> saveRandomCardsOnHand() async {
-    // 랜덤하게 2개의 카드 뽑기
+    // 랜덤하게 3개의 카드 뽑기
     final random = Random();
     if (deck.length < 2) {
       print('Deck에 카드가 2개 이상 있어야 합니다.');
@@ -193,6 +195,8 @@ class _GamePageState extends State<GamePage> {
           },
         }
       });
+
+      gameInstance.setCards(myHandCards);
       _getMatchedUserId(); // 다 가져오면 턴 정하기
     }catch(e){
       print(e);
@@ -236,21 +240,28 @@ class _GamePageState extends State<GamePage> {
       'hp' : warrior.hp,
     };
 
+    gameInstance.drawCard(warrior);
     await firestore.collection('matches').doc(docId).update({
       '${userId}': userObj,
     });
 
   }
 
-  Future<void> _moveWarriorHandToField(int indexWhy) async{
-    final random = Random();
-    int indexRandom = random.nextInt(myHandCards.length); // 이 index는 나중에 함수 호출 할 때 index 넣어줘야 함.
+  Future<void> _moveWarriorHandToField(Warrior warrior) async{
+    int index = 0; // 이 index는 나중에 함수 호출 할 때 index 넣어줘야 함.
     print('내 핸드 카드 : ${myHandCards}');
 
-    Warrior warriorInHand = myHandCards[indexRandom];
-    myFieldCards.add(warriorInHand);
-    myHandCards.removeAt(indexRandom);
+
+    for(int i =0 ; i < myHandCards.length ; i++){
+      if(myHandCards[i] == warrior){
+        index = i;
+        break;
+      }
+    }
+
+    Warrior warriorInHand = myHandCards[index];
     print('인 핸드에서 카드로 : ${warriorInHand}');
+    myHandCards.removeAt(index);
 
     DocumentSnapshot docSnapshot = await firestore.collection('matches').doc(docId).get();
     Map<String, dynamic> data = docSnapshot.data() as Map<String, dynamic>;
@@ -262,7 +273,7 @@ class _GamePageState extends State<GamePage> {
     // onHand에서 카드 삭제
     if (userObj['onHand'] != null && userObj['onHand'] is Map) {
       // 카드 ID에 해당하는 키를 사용하여 삭제
-      String cardKey = 'Card${warriorInHand.id}';
+      String cardKey = 'Card${warriorInHand!.id}';
       userObj['onHand'].remove(cardKey); // Card${id} 형식으로 키를 사용하여 삭제
     }
 
@@ -271,7 +282,7 @@ class _GamePageState extends State<GamePage> {
     if (userObj['onField'] == null) {
       userObj['onField'] = {};
     }
-    userObj['onField']['Card${warriorInHand.id}'] = {
+    userObj['onField']['Card${warriorInHand!.id}'] = {
       'id': warriorInHand.id, // 카드의 id 속성
       'name': warriorInHand.name, // 카드의 name 속성
       'attack': warriorInHand.atk, // 카드의 attack 속성
@@ -305,6 +316,7 @@ class _GamePageState extends State<GamePage> {
       Map<String, dynamic> data = docSnapshot['${userId}'];
       if(data['isMyTurn'] == true && _isMyTurn != true){
         _showMyTurn();
+        gameInstance.cost.addCost();
         _isMyTurn = true;
         _drawWarriorFromDeck();
       }
@@ -389,7 +401,7 @@ class _GamePageState extends State<GamePage> {
                       onPressed: (){
                         setState(() {
                           _isMyTurn = true;
-                          gameInstance.drawCard();
+                          //gameInstance.drawCard();
                         });
                       },
                       child: const Text('상대 턴 종료'),
@@ -401,7 +413,14 @@ class _GamePageState extends State<GamePage> {
                     child: ElevatedButton(
                       onPressed: (){
                         setState(() {
-                          gameInstance.putCard();
+                          CardComponent cardComponent = gameInstance.cards[gameInstance.currentIndex];
+                          if(cardComponent.warrior.cost <= gameInstance.cost.currentCost){
+                            gameInstance.cost.minusCardCost(cardComponent.warrior.cost.toDouble());
+                            _moveWarriorHandToField(cardComponent.warrior);
+                            gameInstance.putCard();
+                          }else{
+                            _showNotEnoughCost();
+                          }
                         });
                       },
                       child: const Text('카드 내기'),
@@ -423,21 +442,21 @@ class _GamePageState extends State<GamePage> {
                   },
                       icon: const Icon(Icons.arrow_back, size: 40, color: Colors.white),
                     ),
-                    Container(
-                      width: 150,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 2),
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.grey[900],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '카드 놓는 곳',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
+                    // Container(
+                    //   width: 150,
+                    //   height: 70,
+                    //   decoration: BoxDecoration(
+                    //     border: Border.all(color: Colors.white, width: 2),
+                    //     borderRadius: BorderRadius.circular(10),
+                    //     color: Colors.grey[900],
+                    //   ),
+                    //   child: Center(
+                    //     child: Text(
+                    //       '카드 놓는 곳',
+                    //       style: TextStyle(color: Colors.white),
+                    //     ),
+                    //   ),
+                    // ),
                     IconButton(
                       onPressed: () {
                         gameInstance.MoveRight();
@@ -495,7 +514,7 @@ class _GamePageState extends State<GamePage> {
                 ElevatedButton(
                   onPressed: () {
                     // 여기에 버튼 동작 추가
-                    _moveWarriorHandToField(1);
+
                   },
                   child: const Text('어떤 기능 버튼'),
                 ),
@@ -527,12 +546,9 @@ class _GamePageState extends State<GamePage> {
                       _isWin = false;
                     });
                     stopSubs();
-                    /*
-                    매칭 페이지 완성되면 지우기
                     await FirebaseFirestore.instance.collection('matches').doc(docId).delete();
-                     */
 
-                    gameInstance = MainService();
+                    //gameInstance = MainService();
                     Navigator.pop(context);
                     Navigator.pop(context);
                     Navigator.pop(context);
@@ -610,7 +626,7 @@ class _GamePageState extends State<GamePage> {
     showDialog(
         context: context,
         barrierDismissible: true,
-        builder: (BuildContext context){
+        builder: (BuildContext context) {
           return AlertDialog(
             title: Row(
               children: [
@@ -622,6 +638,24 @@ class _GamePageState extends State<GamePage> {
           );
         }
     );
+  }
 
+
+    void _showNotEnoughCost() {
+      showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext context){
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Expanded(
+                      child: Text('Cost가 충분하지 않습니다.', textAlign: TextAlign.center)
+                  ),
+                ],
+              ),
+            );
+          }
+      );
   }
 }

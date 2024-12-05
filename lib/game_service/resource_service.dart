@@ -1,6 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import 'package:flame/text.dart';
 import 'package:flutter/material.dart';
+
+import '../game_logic.dart';
 
 class HealthComponent extends PositionComponent {
   final double initialHealth;
@@ -110,17 +113,34 @@ class CostComponent extends PositionComponent {
       ..layout()
       ..paint(canvas, Offset(position.x + 45, position.y + 60));
   }
+
+  void addCost(){
+    currentCost = currentCost +1;
+  }
+
+  void minusCardCost(double cardCost){
+    currentCost = currentCost - cardCost;
+  }
 }
 
 
 class CardComponent extends PositionComponent {
+  Warrior warrior;
   final SpriteComponent cardSprite;
   late RectangleComponent glowEffect;
+  late TextComponent nameComponent;
+  late TextComponent hpComponent;
+  late TextComponent atkComponent;
+  late TextComponent costComponent;
+  late RectangleComponent backgroundTextBoxComponent;
   bool isGlowing = false; // 카드가 강조 상태인지 여부
   bool isVisible = false;
   late int myIndex;
 
-  CardComponent({required this.cardSprite});
+
+  CardComponent({required this.cardSprite, required this.warrior});
+
+  final bgPaint = Paint()..color = Colors.white;
 
   @override
   Future<void> onLoad() async {
@@ -135,7 +155,75 @@ class CardComponent extends PositionComponent {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10.0,
     );
+    nameComponent = TextBoxComponent(
+      text: warrior.name,
+      size: cardSprite.size,
+      align: Anchor.bottomCenter,
+      boxConfig: TextBoxConfig(
+        margins: EdgeInsets.all(8.0),
+      ),
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontSize: 6.0,
+          color: Colors.black,
+          background: bgPaint,
+        )
+      ),
+    );
+
+    atkComponent = TextBoxComponent(
+      text: warrior.atk.toString(),
+      size: cardSprite.size,
+      position: Vector2(-2, 2),
+      align: Anchor.bottomLeft,
+      textRenderer: TextPaint(
+          style: TextStyle(
+            fontSize: 10.0,
+            color: Colors.red,
+          )
+      ),
+    );
+
+    hpComponent = TextBoxComponent(
+      text: warrior.hp.toString(),
+      size: cardSprite.size,
+      position: Vector2(2, 2),
+      align: Anchor.bottomRight,
+      textRenderer: TextPaint(
+          style: TextStyle(
+            fontSize: 10.0,
+            color: Colors.green,
+          )
+      ),
+    );
+
+    costComponent = TextBoxComponent(
+      text: warrior.cost.toString(),
+      size: cardSprite.size,
+      position: Vector2(-2, -2),
+      boxConfig: TextBoxConfig(
+        margins: EdgeInsets.all(8.0),
+      ),
+      textRenderer: TextPaint(
+          style: TextStyle(
+            fontSize: 10.0,
+            color: Colors.blue,
+          )
+      ),
+    );
+
+    // backgroundTextBoxComponent = RectangleComponent(
+    //   size: Vector2(nameComponent.+ 2, nameComponent.height + 2), // 패딩을 고려한 크기
+    //   position: nameComponent.position,
+    //   paint: bgPaint, // 배경 색상
+    // );
+
     add(cardSprite); // 카드 스프라이트 추가
+    //add(backgroundTextBoxComponent);
+    add(nameComponent);
+    add(costComponent);
+    add(atkComponent);
+    add(hpComponent);
   }
 
   @override
@@ -143,6 +231,9 @@ class CardComponent extends PositionComponent {
     if (isGlowing) {
       glowEffect.render(canvas); // 강조 효과 그리기
     }
+
+    Rect rect = Rect.fromLTWH(0, 0, width, height);
+    canvas.drawRect(rect, bgPaint);
     super.render(canvas);
   }
 
