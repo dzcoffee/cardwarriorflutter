@@ -6,11 +6,16 @@ import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import 'package:flame/events.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/animation.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-class MainService extends FlameGame{
+class MainService extends FlameGame with TapCallbacks{
+  Vector2 imageOriginalSize = Vector2(80, 120);
+  CardComponent? selectedCard;
 
   late final screenWidth;
   late final screenHeight;
@@ -30,11 +35,9 @@ class MainService extends FlameGame{
 
   late HealthComponent health;
   late CostComponent cost;
-  List<CardComponent> myCards = [];
-  List<CardComponent> myOnField = [];
 
+  List<CardComponent> myCards = [];
   List<CardComponent> yourCards = [];
-  List<CardComponent> yourOnField = [];
 
   Map<CardComponent, int> myExistField = {};
   Map<CardComponent, int> yourExistField = {};
@@ -42,7 +45,6 @@ class MainService extends FlameGame{
   late var enlargedImage;
   late CardComponent enlargedCard;
 
-  CardComponent? selectedCard = null;
 
   int myCurrentIndex = 1;
   int first = 0;
@@ -56,10 +58,12 @@ class MainService extends FlameGame{
   late HealthComponent oppoHp;
   late CostComponent oppoCost;
 
+  late TextComponent text;
 
   //게임 인스턴스 생성될 때 실행하는 함수
   @override
   Future<void> onLoad() async{
+
     screenWidth = size.x;
     screenHeight = size.y;
     cardPositions = cardPositions.map((num)=> num * screenWidth).toList();
@@ -79,7 +83,17 @@ class MainService extends FlameGame{
     add(_);
     await super.onLoad();
 
-
+    text = TextComponent(
+      text: 'X ${yourCards.length}',
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontSize: 48.0,
+          color: Colors.white, // 흰색 텍스트
+        ),
+      ),
+    );
+    text.position = Vector2(screenWidth * 0.5, yourDrawPosition.y);
+    add(text);
 
     health = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 400);
@@ -97,6 +111,20 @@ class MainService extends FlameGame{
     add(oppoCost);
 
 
+    /// 아무 정보나 입력 tempWarrior 깡통함수 사용
+    final yourCardSprite = await loadCardImage('card_back.png');
+    CardComponent yourCard = CardComponent(
+      cardSprite: yourCardSprite,
+      onCardClicked: this.onCardClickHandler,
+      warrior: tempWarrior()
+    );
+    yourCard.position = Vector2(
+      screenWidth * 0.3, yourDrawPosition.y
+    );
+    yourCard.myIndex = -1;
+    yourCard.cardSprite.size = Vector2(60, 90);
+    yourCard.enlargable = false;
+    add(yourCard);
 
   }
 
@@ -104,7 +132,10 @@ class MainService extends FlameGame{
     //카드 초기화
     for (int i = 0; i < warriorList.length; i++){
       final sprite = await loadCardImage('cards/${warriorList[i].id}.JPG');
-      CardComponent card = CardComponent(cardSprite: sprite, warrior: warriorList[i]);
+      CardComponent card = CardComponent(
+          cardSprite: sprite,
+          onCardClicked: this.onCardClickHandler,
+          warrior: warriorList[i]);
       if(i < 3) {
         card.position = Vector2(
             cardPositions[i+1],
@@ -113,7 +144,7 @@ class MainService extends FlameGame{
       } else{
         card.position = Vector2(cardPositions[4], myPositionY);
       }
-
+      card.isVisible = true;
       myCards.add(card);
     }
     myCards[1].isGlowing = true;
@@ -121,14 +152,13 @@ class MainService extends FlameGame{
     //상대방 카드 초기화
     for (int i = 0; i < yourWarriorList.length; i++){
       final sprite = await loadCardImage('card.png');
-      CardComponent card = CardComponent(cardSprite: sprite, warrior: yourWarriorList[i]);
+      CardComponent card = CardComponent(
+          cardSprite: sprite,
+          onCardClicked: this.onCardClickHandler,
+          warrior: yourWarriorList[i]);
       yourCards.add(card);
     }
-
-    // enlargedImage = myCards[myCurrentIndex].cardSprite;
-    // enlargedCard = CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite), warrior: myCards[myCurrentIndex].warrior);
-    // add(enlargedCard);
-
+    text.text = 'X ${yourCards.length}';
 
   }
 
@@ -169,6 +199,7 @@ class MainService extends FlameGame{
       //이전카드 -> first
       myCards[first-1].position = Vector2(cardPositions[0], myPositionY);
       add(myCards[first-1]);
+      myCards[first-1].isVisible = true;
       myCards[first-1].add(move(Vector2(cardPositions[1], myPositionY), 0.1));
       //first -> middle
       myCards[first].add(move(Vector2(cardPositions[2], myPositionY), 0.1));
@@ -177,6 +208,7 @@ class MainService extends FlameGame{
       //last -> 이후 카드
       myCards[first+2].add(move(Vector2(cardPositions[4], myPositionY), 0.1));
       remove(myCards[first+2]);
+      myCards[first+2].isVisible = false;
       Future.delayed(Duration(milliseconds: 100), () {
         first--;
       });
@@ -200,6 +232,7 @@ class MainService extends FlameGame{
       //이후 카드 -> last
       myCards[first + 3].position = Vector2(cardPositions[4], myPositionY);
       add(myCards[first + 3]);
+      myCards[first + 3].isVisible = true;
       myCards[first + 3].add(move(Vector2(cardPositions[3], myPositionY), 0.1));
       //last -> middle
       myCards[first + 2].add(move(Vector2(cardPositions[2], myPositionY), 0.1));
@@ -210,9 +243,9 @@ class MainService extends FlameGame{
 
       Future.delayed(Duration(milliseconds: 100), () {
         remove(myCards[first]);
+        myCards[first].isVisible = false;
         first++;
       });
-
     }
     myCards[++myCurrentIndex].isGlowing = true;
   }
@@ -222,26 +255,23 @@ class MainService extends FlameGame{
   SpriteComponent cloneCardSprite(SpriteComponent cardSprite){
     return SpriteComponent(
       sprite: cardSprite.sprite,
-      size: cardSprite.size * 3.0,
-      position: Vector2(screenWidth * 0.2, screenHeight * 0.3)
+      size: cardSprite.size * 3.0
     );
   }
 
-
-    void exhibitCard() async{
-    print(myCurrentIndex);
-    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite), warrior: myCards[myCurrentIndex].warrior);
-    return;
-  }
 
 
   ///상대방 카드 드로우
   void drawYourCard(Warrior warrior) async{
     final sprite = await loadCardImage('card.png');
-    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
+    CardComponent card = CardComponent(
+        cardSprite: sprite,
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior);
     card.position = Vector2(screenWidth * 0.05, size.y * 0.3);
     yourCards.add(card);
     add(card);
+    text.text = 'X ${yourCards.length}';
     card.add(move(Vector2(screenWidth * 0.4, size.y * 0.05), 0.5));
     Future.delayed(Duration(milliseconds: 500), (){
       remove(card);
@@ -251,7 +281,10 @@ class MainService extends FlameGame{
   ///카드 드로잉해서 손에 넣는 함수
   void drawMyCard(Warrior warrior) async {
     final sprite = await loadCardImage('cards/${warrior.id}.JPG');
-    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
+    CardComponent card = CardComponent(
+        cardSprite: sprite,
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior);
     card.position = Vector2(screenWidth * 0.1, size.y * 0.6);
     myCards.add(card);
     add(card);
@@ -260,6 +293,7 @@ class MainService extends FlameGame{
         card.add(move(Vector2(cardPositions[1], myPositionY), 0.7));
         Future.delayed(Duration(milliseconds: 700), () {
           card.isGlowing = true;
+          card.isVisible = true;
           myCurrentIndex = 0;
           putBack();
         });
@@ -268,6 +302,7 @@ class MainService extends FlameGame{
         card.add(move(Vector2(cardPositions[2], myPositionY), 0.7));
         Future.delayed(Duration(milliseconds: 700), () {
           card.isGlowing = true;
+          card.isVisible = true;
           myCards[myCurrentIndex].isGlowing = false;
           myCurrentIndex++;
           myCards[myCurrentIndex].isGlowing = true;
@@ -278,6 +313,7 @@ class MainService extends FlameGame{
         card.add(move(Vector2(cardPositions[3], myPositionY), 0.7));
         Future.delayed(Duration(milliseconds: 700), () {
           card.isGlowing = true;
+          card.isVisible = true;
           myCards[myCurrentIndex].isGlowing = false;
           myCurrentIndex++;
           myCards[myCurrentIndex].isGlowing = true;
@@ -394,15 +430,23 @@ class MainService extends FlameGame{
     yourFieldIndex = positionIndex;
 
     final sprite = await loadCardImage('cards/${warrior.id}.JPG');
-    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
+    CardComponent card = CardComponent(
+        cardSprite: sprite,
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior
+    );
     card.position = Vector2(screenWidth * 0.4, size.y * 0.05);
     card.isGlowing = true;
-    yourCards.add(card);
+    yourCards.remove(card);
+    text.text = 'X ${yourCards.length}';
     add(card);
     card.add(move(Vector2(
         yourFieldCardX[yourFieldIndex],
         yourFieldCardY[yourFieldIndex]),
         0.3));
+    Future.delayed(Duration(milliseconds: 300), (){
+      card.isVisible = true;
+    });
     //youExistField = Map ==> {카드객체 : 필드 인덱스}
     yourExistField[card] = yourFieldIndex;
   }
@@ -548,7 +592,93 @@ class MainService extends FlameGame{
     });
   }
 
+  ///카드 없애는 애니메이션
+  void removingAnimation(CardComponent card){
+    MoveByEffect vibrate(offset, double duration) {
+      return MoveByEffect(
+        offset,
+        EffectController(duration: duration, curve: Curves.easeInOut),
+      );
+    }
 
+    card.add(vibrate(Vector2(20, 0), 0.1));
+    Future.delayed(Duration(milliseconds: 100), (){
+      card.add(vibrate(Vector2(-20, 0), 0.1));
+      Future.delayed(Duration(milliseconds: 100), (){
+        card.add(vibrate(Vector2(20, 0), 0.1));
+        Future.delayed(Duration(milliseconds: 100), (){
+          card.add(vibrate(Vector2(-20, 0), 0.1));
+        });
+      });
+    });
+  }
+
+
+  ///카드 없어지도록
+  void destructCard(Map<CardComponent, int> map, int selectedCardIndex){
+    CardComponent card = findCardKey(map, selectedCardIndex);
+    removingAnimation(card);
+    Future.delayed(Duration(milliseconds: 400), (){
+      if(map == yourExistField) {
+        yourFieldIndex = findNextValue(map, yourFieldIndex);
+        yourCards.remove(card);
+        text.text = 'X ${yourCards.length}';
+      } else{
+        myFieldIndex = findNextValue(map, myFieldIndex);
+        myCards.remove(card);
+      }
+      card.isVisible = false;
+      remove(card);
+      map.remove(card);
+    });
+  }
+
+  ///수정바람 내부 정보 필요없는 깡통 카드. 워리어에 아무 정보나 집어넣음.
+  ///tempWarrior 사용한 곳 확인 필요
+  Warrior tempWarrior(){
+    return Warrior("temp", 20, 20, 20, 1, 1);
+  }
+
+  void onCardClickHandler(CardComponent card) async{
+    //확대 안하는 카드
+    if(!card.enlargable) return;
+
+    //카드 확대 상태 아니면
+    if(!CardComponent.tapOnOff){
+      selectedCard = card;
+      card.isClicked = true;
+      CardComponent.tapOnOff = true;
+      enlargedImage = cloneCardSprite(card.cardSprite);
+
+      late Warrior temp;
+      enlargedCard = await CardComponent(
+        cardSprite: enlargedImage,
+        onCardClicked: this.onCardClickHandler,
+        warrior: tempWarrior()
+      );
+      enlargedCard.size = imageOriginalSize * 3;
+      enlargedCard.isVisible = true;
+      enlargedCard.position = Vector2(screenWidth * 0.25, screenHeight * 0.3);
+      add(enlargedCard);
+    }
+    //카드 확대 상태 중이면
+    else{
+      CardComponent.tapOnOff = false;
+      remove(enlargedCard);
+      selectedCard!.isClicked = false;
+    }
+
+    print(card.isClicked);
+  }
+
+  @override
+  void onTapUp(TapUpEvent event){
+    if(CardComponent.tapOnOff){
+      CardComponent.tapOnOff = false;
+      remove(enlargedCard);
+      selectedCard!.isClicked = false;
+    }
+  }
 
   //update마다 실행되는 함수
   @override
@@ -563,5 +693,3 @@ class MainService extends FlameGame{
     myCards.clear();
   }
 }
-
-

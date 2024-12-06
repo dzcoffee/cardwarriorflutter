@@ -129,9 +129,13 @@ class CostComponent extends PositionComponent {
   }
 }
 
-
 class CardComponent extends PositionComponent with TapCallbacks{
-  late World world;
+  final void Function(CardComponent) onCardClicked;
+
+  static bool tapOnOff = false;
+  bool enlargable = true;
+  bool isClicked = false;
+
   Warrior warrior;
   late int hpPoint;
   final SpriteComponent cardSprite;
@@ -142,10 +146,11 @@ class CardComponent extends PositionComponent with TapCallbacks{
   late TextComponent costComponent;
   late RectangleComponent backgroundTextBoxComponent;
   bool isGlowing = false; // 카드가 강조 상태인지 여부
-  late int myIndex;
+  int myIndex = -1;
+  bool isVisible = false;
 
 
-  CardComponent({required this.cardSprite, required this.warrior}) : super(priority: 1);
+  CardComponent({required this.cardSprite, required this.onCardClicked, required this.warrior}) : super(priority: 1);
 
   final bgPaint = Paint()..color = Colors.white;
 
@@ -155,6 +160,7 @@ class CardComponent extends PositionComponent with TapCallbacks{
     super.onLoad();
 
     hpPoint = warrior.hp;
+    this.size = cardSprite.size;
 
     // 빛나는 효과 초기화
     glowEffect = RectangleComponent(
@@ -240,8 +246,13 @@ class CardComponent extends PositionComponent with TapCallbacks{
 
   @override
   void onTapUp(TapUpEvent event){
+    if(!isVisible) {
+      print('Invisible');
+      return;
+    }
+    onCardClicked(this);
     super.onTapUp(event);
-    print('hi');
+
   }
 
 

@@ -953,7 +953,8 @@ class _GamePageState extends State<GamePage> {
                           .doc(docId)
                           .delete();
 
-                      //gameInstance = MainService();
+                      ///여기 수정함
+                      gameInstance = MainService();
                       Navigator.pop(context);
                       Navigator.pop(context);
                       Navigator.pop(context);
