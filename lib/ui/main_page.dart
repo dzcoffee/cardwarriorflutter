@@ -98,8 +98,8 @@ class _MainPageState extends State<MainPage> {
               child: const Text('게임시작'),
               onPressed: (){
                 setState(() {
-                  //Navigator.pushNamed(context, '/matchingpage');
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
+                  Navigator.pushNamed(context, '/matchingpage');
+                  //Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
                 });
               },
             ),
