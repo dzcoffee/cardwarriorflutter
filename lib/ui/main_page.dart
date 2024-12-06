@@ -99,7 +99,7 @@ class _MainPageState extends State<MainPage> {
               onPressed: (){
                 setState(() {
                   Navigator.pushNamed(context, '/matchingpage');
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
+                  //Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
                 });
               },
             ),
