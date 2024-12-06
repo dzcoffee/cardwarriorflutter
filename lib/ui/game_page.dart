@@ -10,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:card_warrior/game_logic.dart';
 
+late int size;
+
 class GamePage extends StatefulWidget {
   const GamePage({required this.docId});
   final String docId;
@@ -370,7 +372,7 @@ class _GamePageState extends State<GamePage> {
               }
             }
             yourFieldCards.add(notWarrior);
-            gameInstance.oppoCost.minusCardCost(notWarrior.cost.toDouble());
+            gameInstance.oppoCost.minusCardCost(notWarrior.cost);
           }
         }
 
@@ -406,7 +408,7 @@ class _GamePageState extends State<GamePage> {
           if(myATKCardId == -1){
             for(Warrior yourCard in yourFieldCards){
               if(yourCard.id == yourATKCardId){
-                gameInstance.oppoHp.damaged(yourCard.atk.toDouble());
+                gameInstance.oppoHp.damaged(yourCard.atk);
                 gameInstance.yourAttack();
                 break;
               }
@@ -540,7 +542,7 @@ class _GamePageState extends State<GamePage> {
                           _showMyCardAttackTimeIsZero();
                         }else{
                           setState(() {
-                            gameInstance.oppoHp.damaged(myFieldAtkCard.atk.toDouble());
+                            gameInstance.oppoHp.damaged(myFieldAtkCard.atk);
                             myFieldAttackTime[myFieldAtkCard.id] = 0;
                           });
 
@@ -758,7 +760,7 @@ class _GamePageState extends State<GamePage> {
                         if (cardComponent.warrior.cost <=
                             gameInstance.cost.currentCost) {
                           gameInstance.cost.minusCardCost(
-                              cardComponent.warrior.cost.toDouble());
+                              cardComponent.warrior.cost);
                           _moveWarriorHandToField(cardComponent.warrior);
                           gameInstance.putMyCard();
                           myFieldCards.add(cardComponent.warrior);
