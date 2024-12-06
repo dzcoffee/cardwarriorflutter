@@ -35,7 +35,7 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromRGBO(184, 156, 120, 1.0),
+      backgroundColor: Colors.blue,
       body: Center(
         child: AnimatedOpacity(
             opacity: _opacity,

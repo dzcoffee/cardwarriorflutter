@@ -9,8 +9,6 @@ class GamePage extends StatefulWidget {
 }
 
 class _GamePageState extends State<GamePage> {
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,8 +170,7 @@ class _GamePageState extends State<GamePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
-                    onPressed: () {
-
+                    onPressed: (){
                       Navigator.pop(context);
                       Navigator.pop(context);
                     },
