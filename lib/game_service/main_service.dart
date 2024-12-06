@@ -92,7 +92,7 @@ class MainService extends FlameGame{
     oppoHp = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 30);
     add(oppoHp);
-    oppoCost = CostComponent(initialCost: 20, maxCost: 20)
+    oppoCost = CostComponent(initialCost: 0, maxCost: 10)
       ..position = Vector2(160, 30);
     add(oppoCost);
 
@@ -100,7 +100,7 @@ class MainService extends FlameGame{
 
   }
 
-  void setCards(List<Warrior> warriorList) async {
+  void setCards(List<Warrior> warriorList, List<Warrior> yourWarriorList) async {
     //카드 초기화
     for (int i = 0; i < warriorList.length; i++){
       final sprite = await loadCardImage('cards/${warriorList[i].id}.JPG');
@@ -119,16 +119,15 @@ class MainService extends FlameGame{
     myCards[1].isGlowing = true;
 
     //상대방 카드 초기화
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < yourWarriorList.length; i++){
       final sprite = await loadCardImage('card.png');
-      CardComponent card = CardComponent(cardSprite: sprite);
+      CardComponent card = CardComponent(cardSprite: sprite, warrior: yourWarriorList[i]);
       yourCards.add(card);
     }
 
-
-    enlargedImage = cards[currentIndex].cardSprite;
-    enlargedCard = CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
-    add(enlargedCard);
+    // enlargedImage = myCards[myCurrentIndex].cardSprite;
+    // enlargedCard = CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite), warrior: myCards[myCurrentIndex].warrior);
+    // add(enlargedCard);
 
 
   }
@@ -230,16 +229,16 @@ class MainService extends FlameGame{
 
 
     void exhibitCard() async{
-    print(currentIndex);
-    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(cards[currentIndex].cardSprite), warrior: cards[currentIndex].warrior);
+    print(myCurrentIndex);
+    enlargedCard = await CardComponent(cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite), warrior: myCards[myCurrentIndex].warrior);
     return;
   }
 
 
   ///상대방 카드 드로우
-  void drawYourCard() async{
+  void drawYourCard(Warrior warrior) async{
     final sprite = await loadCardImage('card.png');
-    CardComponent card = CardComponent(cardSprite: sprite);
+    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
     card.position = Vector2(screenWidth * 0.05, size.y * 0.3);
     yourCards.add(card);
     add(card);
@@ -387,15 +386,15 @@ class MainService extends FlameGame{
   /*positionIndex => 6개로 나뉜 상대방 필드 위 인덱스
   들어오는 값은 0부터 5까지밖에 없다.
    */
-  void putYourCard(int positionIndex, String cardName) async{
+  void putYourCard(int positionIndex, Warrior warrior) async{
     //yourFieldIndex는 필드 위 선택된 카드 중 이전에 선택된 인덱스
     if(yourFieldIndex != -1) {
       findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
     }
     yourFieldIndex = positionIndex;
 
-    final sprite = await loadCardImage(cardName);
-    CardComponent card = CardComponent(cardSprite: sprite);
+    final sprite = await loadCardImage('cards/${warrior.id}.JPG');
+    CardComponent card = CardComponent(cardSprite: sprite, warrior: warrior);
     card.position = Vector2(screenWidth * 0.4, size.y * 0.05);
     card.isGlowing = true;
     yourCards.add(card);

@@ -65,7 +65,7 @@ class HealthComponent extends PositionComponent {
 }
 
 class CostComponent extends PositionComponent {
-  final double initialCost;
+  double initialCost;
   final double maxCost;
   double currentCost;
 
@@ -119,7 +119,9 @@ class CostComponent extends PositionComponent {
   }
 
   void addCost(){
-    currentCost = currentCost +1;
+    print('지금 코스트 ${initialCost} : ${currentCost}');
+    initialCost = initialCost +1.0;
+    currentCost = initialCost;
   }
 
   void minusCardCost(double cardCost){
@@ -131,6 +133,7 @@ class CostComponent extends PositionComponent {
 class CardComponent extends PositionComponent with TapCallbacks{
   late World world;
   Warrior warrior;
+  late int hpPoint;
   final SpriteComponent cardSprite;
   late RectangleComponent glowEffect;
   late TextComponent nameComponent;
@@ -151,6 +154,7 @@ class CardComponent extends PositionComponent with TapCallbacks{
   Future<void> onLoad() async {
     super.onLoad();
 
+    hpPoint = warrior.hp;
 
     // 빛나는 효과 초기화
     glowEffect = RectangleComponent(
@@ -192,7 +196,7 @@ class CardComponent extends PositionComponent with TapCallbacks{
     );
 
     hpComponent = TextBoxComponent(
-      text: warrior.hp.toString(),
+      text: hpPoint.toString(),
       size: cardSprite.size,
       position: Vector2(2, 2),
       align: Anchor.bottomRight,
@@ -250,6 +254,17 @@ class CardComponent extends PositionComponent with TapCallbacks{
     Rect rect = Rect.fromLTWH(0, 0, width, height);
     canvas.drawRect(rect, bgPaint);
     super.render(canvas);
+  }
+
+  void attack(CardComponent cardComponent){
+    warrior.attack(cardComponent.warrior); // 현재 Card의 hp 업데이트
+    hpPoint = warrior.hp;
+    cardComponent.hpPoint = cardComponent.warrior.hp;
+    hpComponent.text = hpPoint.toString();
+    cardComponent.hpComponent.text = cardComponent.hpPoint.toString();
+    print('어택 중입니다 ${hpPoint} && ${hpComponent.text} && ${cardComponent.hpComponent.text}');
+
+    super.update(0);
   }
 
 }
