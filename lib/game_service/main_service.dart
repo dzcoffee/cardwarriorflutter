@@ -95,19 +95,19 @@ class MainService extends FlameGame with TapCallbacks{
     text.position = Vector2(screenWidth * 0.5, yourDrawPosition.y);
     add(text);
 
-    health = HealthComponent(initialHealth: 20, maxHealth: 20)
-      ..position = Vector2(-10, 400);
+    health = HealthComponent(initialHealth: 20, maxHealth: 20,);
+    health.position = Vector2(screenWidth * 0.03, screenHeight * 0.8);
     add(health);
-    cost = CostComponent(initialCost: 0, maxCost: 10)
-    ..position = Vector2(140, 300);
+    cost = CostComponent(initialCost: 0, maxCost: 10);
+    cost.position = Vector2(screenWidth * 0.8, screenHeight * 0.8);
     add(cost);
 
     //상대 정보
-    oppoHp = HealthComponent(initialHealth: 20, maxHealth: 20)
-      ..position = Vector2(-10, 30);
+    oppoHp = HealthComponent(initialHealth: 20, maxHealth: 20);
+    oppoHp.position = Vector2(screenWidth * 0.03, screenHeight * 0.05);
     add(oppoHp);
-    oppoCost = CostComponent(initialCost: 0, maxCost: 10)
-      ..position = Vector2(160, 30);
+    oppoCost = CostComponent(initialCost: 0, maxCost: 10);
+    oppoCost.position = Vector2(screenWidth * 0.8, screenHeight * 0.05);
     add(oppoCost);
 
 
@@ -151,7 +151,7 @@ class MainService extends FlameGame with TapCallbacks{
 
     //상대방 카드 초기화
     for (int i = 0; i < yourWarriorList.length; i++){
-      final sprite = await loadCardImage('card.png');
+      final sprite = await loadCardImage('card_back.png');
       CardComponent card = CardComponent(
           cardSprite: sprite,
           onCardClicked: this.onCardClickHandler,
@@ -263,7 +263,7 @@ class MainService extends FlameGame with TapCallbacks{
 
   ///상대방 카드 드로우
   void drawYourCard(Warrior warrior) async{
-    final sprite = await loadCardImage('card.png');
+    final sprite = await loadCardImage('card_back.png');
     CardComponent card = CardComponent(
         cardSprite: sprite,
         onCardClicked: this.onCardClickHandler,
@@ -636,7 +636,7 @@ class MainService extends FlameGame with TapCallbacks{
   ///수정바람 내부 정보 필요없는 깡통 카드. 워리어에 아무 정보나 집어넣음.
   ///tempWarrior 사용한 곳 확인 필요
   Warrior tempWarrior(){
-    return Warrior("temp", 20, 20, 20, 1, 1);
+    return Warrior("temp", 20, 20, 20, 0, 9);
   }
 
   void onCardClickHandler(CardComponent card) async{
@@ -650,16 +650,40 @@ class MainService extends FlameGame with TapCallbacks{
       CardComponent.tapOnOff = true;
       enlargedImage = cloneCardSprite(card.cardSprite);
 
-      late Warrior temp;
       enlargedCard = await CardComponent(
         cardSprite: enlargedImage,
         onCardClicked: this.onCardClickHandler,
-        warrior: tempWarrior()
+        warrior: card.warrior
       );
-      enlargedCard.size = imageOriginalSize * 3;
+      enlargedCard.size = imageOriginalSize * 3.0;
       enlargedCard.isVisible = true;
       enlargedCard.position = Vector2(screenWidth * 0.25, screenHeight * 0.3);
       add(enlargedCard);
+      enlargedCard.nameComponent.textRenderer = TextPaint(
+          style: TextStyle(
+            fontSize: 18.0,
+            color: Colors.black,
+            background: enlargedCard.bgPaint,
+          )
+      );
+      enlargedCard.atkComponent.textRenderer = TextPaint(
+          style: TextStyle(
+            fontSize: 50.0,
+            color: Colors.red,
+          )
+      );
+      enlargedCard.hpComponent.textRenderer = TextPaint(
+          style: TextStyle(
+            fontSize: 50.0,
+            color: Colors.green,
+          )
+      );
+      enlargedCard.costComponent.textRenderer = TextPaint(
+          style: TextStyle(
+            fontSize: 50.0,
+            color: Colors.blue,
+          )
+      );
     }
     //카드 확대 상태 중이면
     else{
@@ -669,6 +693,9 @@ class MainService extends FlameGame with TapCallbacks{
     }
 
     print(card.isClicked);
+  }
+
+  void cpyInfo(CardComponent cpy){
   }
 
   @override
