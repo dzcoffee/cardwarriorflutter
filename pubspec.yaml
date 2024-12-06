@@ -38,10 +38,11 @@ dependencies:
   firebase_core: ^3.7.0
   firebase_database: ^11.1.5
   firebase_auth: ^5.3.2
+  cloud_firestore: ^5.5.0
+  flame_noise: ^0.3.2+3
 
   flame: ^1.21.0
   flutter_neumorphic: ^3.0.0
-  cloud_firestore: ^5.5.0
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +72,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/images/
+    - assets/images/cards/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
