@@ -111,11 +111,11 @@ class MainService extends FlameGame with TapCallbacks{
     add(oppoCost);
 
 
-    /// 아무 정보나 입력 tempWarrior 깡통함수 사용
     final yourCardSprite = await loadCardImage('card_back.png');
     CardComponent yourCard = CardComponent(
       cardSprite: yourCardSprite,
       onCardClicked: this.onCardClickHandler,
+        /// 아무 정보나 입력 tempWarrior 깡통함수 사용
       warrior: tempWarrior()
     );
     yourCard.position = Vector2(

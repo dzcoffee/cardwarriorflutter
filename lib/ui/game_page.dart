@@ -954,7 +954,7 @@ class _GamePageState extends State<GamePage> {
                           .delete();
 
                       ///여기 수정함
-                      gameInstance = MainService();
+                      //gameInstance = MainService();
                       Navigator.pop(context);
                       Navigator.pop(context);
                       Navigator.pop(context);
