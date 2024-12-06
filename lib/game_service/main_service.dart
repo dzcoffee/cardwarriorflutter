@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:card_warrior/game_logic.dart';
 import 'package:card_warrior/game_service/background_service.dart';
 import 'package:card_warrior/game_service/resource_service.dart';
 import 'package:flame/components.dart';
@@ -59,7 +60,6 @@ class MainService extends FlameGame with TapCallbacks{
 
   late TextComponent text;
 
-  late OpacityProvider _opacityProvider;
   //게임 인스턴스 생성될 때 실행하는 함수
   @override
   Future<void> onLoad() async{
@@ -98,38 +98,44 @@ class MainService extends FlameGame with TapCallbacks{
     health = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 400);
     add(health);
-    cost = CostComponent(initialCost: 20, maxCost: 20)
-    ..position = Vector2(160, 400);
+    cost = CostComponent(initialCost: 0, maxCost: 10)
+    ..position = Vector2(140, 300);
     add(cost);
 
     //상대 정보
     oppoHp = HealthComponent(initialHealth: 20, maxHealth: 20)
       ..position = Vector2(-10, 30);
     add(oppoHp);
-    oppoCost = CostComponent(initialCost: 20, maxCost: 20)
+    oppoCost = CostComponent(initialCost: 0, maxCost: 10)
       ..position = Vector2(160, 30);
     add(oppoCost);
 
-    final yourCardSprite = await loadCardImage('card.png');
+
+    /// 아무 정보나 입력 tempWarrior 깡통함수 사용
+    final yourCardSprite = await loadCardImage('card_back.png');
     CardComponent yourCard = CardComponent(
-        cardSprite: yourCardSprite,
-        onCardClicked: this.onCardClickHandler
+      cardSprite: yourCardSprite,
+      onCardClicked: this.onCardClickHandler,
+      warrior: tempWarrior()
     );
     yourCard.position = Vector2(
-        screenWidth * 0.3, yourDrawPosition.y
+      screenWidth * 0.3, yourDrawPosition.y
     );
     yourCard.myIndex = -1;
     yourCard.cardSprite.size = Vector2(60, 90);
     yourCard.enlargable = false;
     add(yourCard);
 
-    //내 카드 초기화
-    for (int i = 0; i < 3; i++){
-      final sprite = await loadCardImage('card.png');
+  }
+
+  void setCards(List<Warrior> warriorList, List<Warrior> yourWarriorList) async {
+    //카드 초기화
+    for (int i = 0; i < warriorList.length; i++){
+      final sprite = await loadCardImage('cards/${warriorList[i].id}.JPG');
       CardComponent card = CardComponent(
           cardSprite: sprite,
-          onCardClicked: this.onCardClickHandler
-      );
+          onCardClicked: this.onCardClickHandler,
+          warrior: warriorList[i]);
       if(i < 3) {
         card.position = Vector2(
             cardPositions[i+1],
@@ -144,12 +150,12 @@ class MainService extends FlameGame with TapCallbacks{
     myCards[1].isGlowing = true;
 
     //상대방 카드 초기화
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < yourWarriorList.length; i++){
       final sprite = await loadCardImage('card.png');
       CardComponent card = CardComponent(
           cardSprite: sprite,
-          onCardClicked: this.onCardClickHandler
-      );
+          onCardClicked: this.onCardClickHandler,
+          warrior: yourWarriorList[i]);
       yourCards.add(card);
     }
     text.text = 'X ${yourCards.length}';
@@ -210,7 +216,12 @@ class MainService extends FlameGame with TapCallbacks{
     myCards[--myCurrentIndex].isGlowing = true;
   }
 
+
+
+
+
   ///오른쪽 카드 선택
+
   void MoveRight(){
     int length = myCards.length;
     if(myCurrentIndex == length - 1) return;
@@ -248,25 +259,19 @@ class MainService extends FlameGame with TapCallbacks{
     );
   }
 
-  ///선택한 카드 크게 보여주는 함수
-  void exhibitCard() async{
-    enlargedCard = await CardComponent(
-      cardSprite: cloneCardSprite(myCards[myCurrentIndex].cardSprite),
-      onCardClicked: this.onCardClickHandler
-    );
-    return;
-  }
+
 
   ///상대방 카드 드로우
-  void drawYourCard() async{
+  void drawYourCard(Warrior warrior) async{
     final sprite = await loadCardImage('card.png');
     CardComponent card = CardComponent(
         cardSprite: sprite,
-        onCardClicked: this.onCardClickHandler
-    );
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior);
     card.position = Vector2(screenWidth * 0.05, size.y * 0.3);
     yourCards.add(card);
     add(card);
+    text.text = 'X ${yourCards.length}';
     card.add(move(Vector2(screenWidth * 0.4, size.y * 0.05), 0.5));
     Future.delayed(Duration(milliseconds: 500), (){
       remove(card);
@@ -274,12 +279,12 @@ class MainService extends FlameGame with TapCallbacks{
   }
 
   ///카드 드로잉해서 손에 넣는 함수
-  void drawMyCard() async {
-    final sprite = await loadCardImage('card.png');
+  void drawMyCard(Warrior warrior) async {
+    final sprite = await loadCardImage('cards/${warrior.id}.JPG');
     CardComponent card = CardComponent(
         cardSprite: sprite,
-        onCardClicked: this.onCardClickHandler
-    );
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior);
     card.position = Vector2(screenWidth * 0.1, size.y * 0.6);
     myCards.add(card);
     add(card);
@@ -417,21 +422,23 @@ class MainService extends FlameGame with TapCallbacks{
   /*positionIndex => 6개로 나뉜 상대방 필드 위 인덱스
   들어오는 값은 0부터 5까지밖에 없다.
    */
-  void putYourCard(int positionIndex, String cardName) async{
+  void putYourCard(int positionIndex, Warrior warrior) async{
     //yourFieldIndex는 필드 위 선택된 카드 중 이전에 선택된 인덱스
     if(yourFieldIndex != -1) {
       findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
     }
     yourFieldIndex = positionIndex;
 
-    final sprite = await loadCardImage(cardName);
+    final sprite = await loadCardImage('cards/${warrior.id}.JPG');
     CardComponent card = CardComponent(
         cardSprite: sprite,
-        onCardClicked: this.onCardClickHandler
+        onCardClicked: this.onCardClickHandler,
+        warrior: warrior
     );
     card.position = Vector2(screenWidth * 0.4, size.y * 0.05);
     card.isGlowing = true;
     yourCards.remove(card);
+    text.text = 'X ${yourCards.length}';
     add(card);
     card.add(move(Vector2(
         yourFieldCardX[yourFieldIndex],
@@ -581,12 +588,10 @@ class MainService extends FlameGame with TapCallbacks{
       Future.delayed(Duration(milliseconds: 400), (){
         card.add(move(Vector2(myFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex]), 0.2));
         card.priority = priority;
-        /// 여기에 카드 없애는 애니메이션 추가 예시
-        destructCard(myExistField, myFieldIndex);
       });
     });
   }
-  
+
   ///카드 없애는 애니메이션
   void removingAnimation(CardComponent card){
     MoveByEffect vibrate(offset, double duration) {
@@ -607,7 +612,7 @@ class MainService extends FlameGame with TapCallbacks{
       });
     });
   }
-  
+
 
   ///카드 없어지도록
   void destructCard(Map<CardComponent, int> map, int selectedCardIndex){
@@ -628,6 +633,12 @@ class MainService extends FlameGame with TapCallbacks{
     });
   }
 
+  ///수정바람 내부 정보 필요없는 깡통 카드. 워리어에 아무 정보나 집어넣음.
+  ///tempWarrior 사용한 곳 확인 필요
+  Warrior tempWarrior(){
+    return Warrior("temp", 20, 20, 20, 1, 1);
+  }
+
   void onCardClickHandler(CardComponent card) async{
     //확대 안하는 카드
     if(!card.enlargable) return;
@@ -638,9 +649,13 @@ class MainService extends FlameGame with TapCallbacks{
       card.isClicked = true;
       CardComponent.tapOnOff = true;
       enlargedImage = cloneCardSprite(card.cardSprite);
+
+      late Warrior temp;
       enlargedCard = await CardComponent(
-          cardSprite: enlargedImage,
-          onCardClicked: this.onCardClickHandler);
+        cardSprite: enlargedImage,
+        onCardClicked: this.onCardClickHandler,
+        warrior: tempWarrior()
+      );
       enlargedCard.size = imageOriginalSize * 3;
       enlargedCard.isVisible = true;
       enlargedCard.position = Vector2(screenWidth * 0.25, screenHeight * 0.3);
