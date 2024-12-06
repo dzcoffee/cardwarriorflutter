@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -115,20 +116,28 @@ class CostComponent extends PositionComponent {
   }
 }
 
-
 class CardComponent extends PositionComponent with TapCallbacks{
-  late World world;
+  final void Function(CardComponent) onCardClicked;
+
+  static bool tapOnOff = false;
+  bool enlargable = true;
+  bool isClicked = false;
+
   final SpriteComponent cardSprite;
   late RectangleComponent glowEffect;
   bool isGlowing = false; // 카드가 강조 상태인지 여부
-  late int myIndex;
+  int myIndex = -1;
+  late final opacityEffect;
+  bool isVisible = false;
 
-  CardComponent({required this.cardSprite}) : super(priority: 1);
+  CardComponent({required this.cardSprite, required this.onCardClicked})
+      : super(priority: 1);
 
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
+    this.size = cardSprite.size;
 
     // 빛나는 효과 초기화
     glowEffect = RectangleComponent(
@@ -146,8 +155,13 @@ class CardComponent extends PositionComponent with TapCallbacks{
 
   @override
   void onTapUp(TapUpEvent event){
+    if(!isVisible) {
+      print('Invisible');
+      return;
+    }
+    onCardClicked(this);
     super.onTapUp(event);
-    print('hi');
+
   }
 
 
