@@ -89,6 +89,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.1"
+  fast_noise:
+    dependency: transitive
+    description:
+      name: fast_noise
+      sha256: "2aa7bbde5599d2b6769750ee23536ec8a0096606fc9d10d29a3855e80715e1c6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   firebase_auth:
     dependency: "direct main"
     description:
@@ -161,14 +169,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.6+4"
+  fixnum:
+    dependency: transitive
+    description:
+      name: fixnum
+      sha256: b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   flame:
     dependency: "direct main"
     description:
       name: flame
-      sha256: baafe5c38075b60577db05e0421c12941695b246547d9aca95166def3f29e57f
+      sha256: c02390443e40a2a9034ac867d0789ab32f215eba4779bff4655a7143eb3d75d0
       url: "https://pub.dev"
     source: hosted
-    version: "1.21.0"
+    version: "1.22.0"
+  flame_noise:
+    dependency: "direct main"
+    description:
+      name: flame_noise
+      sha256: c922ac8a1a2eb2cd33d39994202533dc8da8babf09e59903e5d41899ccbb627f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2+3"
   flutter:
     dependency: "direct main"
     description: flutter

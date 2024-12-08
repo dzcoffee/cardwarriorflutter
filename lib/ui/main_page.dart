@@ -112,28 +112,27 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          Center(
+          body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/images/logo.png', width: 200, height: 200,),
                 const SizedBox(
-                  height: 20,
+                  height: 100,
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(200, 50)
+                    minimumSize: const Size(200, 50)
                   ),
                   child: const Text('게임시작'),
                   onPressed: (){
                     setState(() {
-                      //Navigator.pushNamed(context, '/matchingpage');
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
+                      Navigator.pushNamed(context, '/matchingpage');
+                      //Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: 'test')));
                     });
                   },
                 ),
                 const SizedBox(
-                  height: 20,
+                  height: 100,
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
