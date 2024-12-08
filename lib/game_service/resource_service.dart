@@ -111,12 +111,12 @@ class CostComponent extends PositionComponent {
 
   void addCost(){
     print('지금 코스트 ${initialCost} : ${currentCost}');
-    initialCost = initialCost + 1;
-    currentCost = initialCost;
+    initialCost = (initialCost + 1).clamp(0, maxCost);
+    currentCost = initialCost.clamp(0, maxCost);
   }
 
   void minusCardCost(int cardCost){
-    currentCost = currentCost - cardCost;
+    currentCost = (currentCost - cardCost).clamp(0, maxCost);
   }
 }
 

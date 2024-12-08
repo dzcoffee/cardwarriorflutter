@@ -429,6 +429,9 @@ class MainService extends FlameGame with TapCallbacks{
     // if(yourFieldIndex != -1) {
     //   findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
     // }
+    if(yourExistField.length != 0){
+      findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
+    }
     yourFieldIndex = positionIndex;
 
     final sprite = await loadCardImage('cards/${warrior.id}.JPG');
