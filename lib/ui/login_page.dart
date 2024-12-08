@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
                       onPressed: _login,
                       child: const Text('로그인'),
                     ),
-                    TextButton(
+                    ElevatedButton(
                       child: Text('회원가입하기'),
                       onPressed: (){
                         Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
