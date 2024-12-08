@@ -432,7 +432,7 @@ class _GamePageState extends State<GamePage> {
                 break;
               }
             }
-            if(gameInstance.oppoHp.currentHealth <= 0){
+            if(gameInstance.health.currentHealth <= 0){
               setState(() {
                 _isWin = false;
               });
