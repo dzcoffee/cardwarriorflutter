@@ -32,6 +32,7 @@ class _GamePageState extends State<GamePage> {
   String? userId = '';
   String? docId;
   String? matchedUserId;
+  int? drawCardCount;
   StreamSubscription<DocumentSnapshot>? matchNewSubs;
   FirebaseDatabase database = FirebaseDatabase.instance;
   List<Warrior> deck = [];
@@ -82,7 +83,10 @@ class _GamePageState extends State<GamePage> {
       if (matchedUserId == userId) {
         // matchedUserId가 나면 userId 받아오기
         matchedUserId = docSnapshot['userId'];
-        _isMyTurn = true;
+        setState(() {
+          _isMyTurn = true;
+        });
+
         try {
           Map<String, dynamic> data =
               docSnapshot.data() as Map<String, dynamic>;
@@ -96,6 +100,7 @@ class _GamePageState extends State<GamePage> {
             '${userId}': matchedUserObj,
           });
           print('턴 업데이트 완료');
+
           _showMyTurn();
           setAttackTime();
           gameInstance.cost.addCost();
@@ -341,13 +346,13 @@ class _GamePageState extends State<GamePage> {
       print('내 턴 확인 ${_isMyTurn}');       
 
       Map<String, dynamic> data = docSnapshot['${userId}'];
-      if(docSnapshot['${matchedUserId}'] != null ){
+      if(docSnapshot['${matchedUserId}'] != null ){ //상대 카드 낸 거 확인용임
         Map<String, dynamic> yourData = docSnapshot['${matchedUserId}'];
         print('온 핸드 확인 ${yourData['onHand']}');
         if(yourData['onField'] != null && yourData['attack'] == null && _isMyTurn == false){
           Map<String, dynamic> checkedYourField = yourData['onField'];
           print('길이 ${checkedYourField.length} && ${yourFieldCards.length}');
-          if (checkedYourField.length != yourFieldCards.length) {
+          if (checkedYourField.length > yourFieldCards.length) {
             for (Warrior yourLocalFieldwarrior in yourFieldCards) {
               print('카드 이름 : Card${yourLocalFieldwarrior.id}');
               checkedYourField.remove('Card${yourLocalFieldwarrior.id}');
@@ -366,8 +371,15 @@ class _GamePageState extends State<GamePage> {
             for(int i=5; i >= 0 ; i--){
               if(!yourFieldIndex.containsValue(i)){
                 positionIndex=i;
+                print('풋 유얼 카드 : ${positionIndex}, ${notWarrior}');
                 gameInstance.putYourCard(positionIndex, notWarrior);
                 yourFieldIndex[notWarrior.id] = positionIndex;
+                for(Warrior warrior in yourHandCards){
+                  if(warrior.id == notWarrior.id){
+                    yourHandCards.remove(warrior);
+                    break;
+                  }
+                }
                 break;
               }
             }
@@ -380,21 +392,26 @@ class _GamePageState extends State<GamePage> {
           Map<String, dynamic> checkedYourHand = yourData['onHand'];
           if(checkedYourHand.length != yourHandCards.length){
             for(Warrior yourLocalHandWarrior in yourHandCards){
-              print('온 핸드 리무브 중 ');
+              print('온 핸드 리무브 중  : ${yourLocalHandWarrior}');
               checkedYourHand.remove('Card${yourLocalHandWarrior.id}');
             }
             Map<String, dynamic> notHandWarriorData = checkedYourHand;
-            for(String CardKey in notHandWarriorData.keys){
-              Map<String, dynamic> actualValue = notHandWarriorData[CardKey];
-              Warrior notWarrior = Warrior(
-                  actualValue['name'],
-                  actualValue['cost'],
-                  actualValue['hp'],
-                  actualValue['attack'],
-                  actualValue['type'],
-                  actualValue['id']);
-              yourHandCards.add(notWarrior);
-              gameInstance.drawYourCard(notWarrior);
+            if(notHandWarriorData.length == 1 && drawCardCount == 0){
+              print('여기 체크');
+            }else{
+              for(String CardKey in notHandWarriorData.keys){
+                Map<String, dynamic> actualValue = notHandWarriorData[CardKey];
+                Warrior notWarrior = Warrior(
+                    actualValue['name'],
+                    actualValue['cost'],
+                    actualValue['hp'],
+                    actualValue['attack'],
+                    actualValue['type'],
+                    actualValue['id']);
+                yourHandCards.add(notWarrior);
+                gameInstance.drawYourCard(notWarrior);
+                drawCardCount = 1;
+              }
             }
           }
         }
@@ -408,8 +425,10 @@ class _GamePageState extends State<GamePage> {
           if(myATKCardId == -1){
             for(Warrior yourCard in yourFieldCards){
               if(yourCard.id == yourATKCardId){
-                gameInstance.oppoHp.damaged(yourCard.atk);
-                gameInstance.yourAttack();
+                gameInstance.yourAttack(yourFieldIndex[yourCard.id]!, -1);
+                setState(() {
+                  gameInstance.health.damaged(yourCard.atk);
+                });
                 break;
               }
             }
@@ -441,21 +460,24 @@ class _GamePageState extends State<GamePage> {
                 for(Warrior myCard in myFieldCards){
                   if(myCard.id == myATKCardId){
                     //myCard.attack(yourCard);
-                    gameInstance.yourFieldIndex = yourFieldIndex[yourCard.id]!;
-                    gameInstance.yourAttack();
-                    gameInstance.myFieldIndex = myFieldIndex[myCard.id]!;
-                    CardComponent myCardComponent =  gameInstance.findCardKey(gameInstance.myExistField, gameInstance.myFieldIndex);
-                    CardComponent yourCardComponent = gameInstance.findCardKey(gameInstance.yourExistField, gameInstance.yourFieldIndex);
+                    gameInstance.yourAttack(yourFieldIndex[yourCard.id]!, myFieldIndex[myCard.id]!);
+
+                    CardComponent myCardComponent =  gameInstance.findCardKey(gameInstance.myExistField, myFieldIndex[myCard.id]!);
+                    CardComponent yourCardComponent = gameInstance.findCardKey(gameInstance.yourExistField, yourFieldIndex[yourCard.id]!);
                     setState(() {
                       myCardComponent.attack(yourCardComponent);
-                      if(myCardComponent.hpPoint <=0){
+                      if(myCardComponent.hpPoint <0 || myCardComponent.hpPoint == 0){
                         //gameInstance.remove(myCardComponent); //내 카드 제거 메서드
+                        gameInstance.destructCard(gameInstance.myExistField, myFieldIndex[myCard.id]!);
                         myFieldCards.remove(myCard);
+                        myFieldIndex.remove(myCard);
                         print('삭제 체크 ${myFieldCards}, 삭제한 카드 ${myCardComponent.warrior}');
                       }
-                      if(yourCardComponent.hpPoint<=0){
-                        //gameInstance.remove(yourCardComponent); // 상대 카드 제거 메서드
+                      if(yourCardComponent.hpPoint<=0 || yourCardComponent.hpPoint == 0){
+                        //gameInstance.remove(yourCardComponent); // 상대 카드 제거 메서
+                        gameInstance.destructCard(gameInstance.yourExistField, yourFieldIndex[yourCard.id]!);
                         yourFieldCards.remove(yourCard);
+                        yourFieldIndex.remove(yourCard.id);
                         print('상대 카드 삭제 체크 ${yourFieldCards} , 삭제된 상대 카드 ${yourCardComponent.warrior} ');
                       }
                       print('여기 테스트중입니다~');
@@ -487,7 +509,10 @@ class _GamePageState extends State<GamePage> {
         _showMyTurn();
         setAttackTime();
         gameInstance.cost.addCost();
-        _isMyTurn = true;
+        setState(() {
+          _isMyTurn = true;
+        });
+
         //gameInstance.oppoCost.addCost();
         _drawWarriorFromDeck();
       }
@@ -530,17 +555,22 @@ class _GamePageState extends State<GamePage> {
                 width: 75,
                 height: 40,
                 child: ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                      backgroundColor: (_isMyTurn == true) ? Colors.green :  Color.fromRGBO(184, 156, 120, 1.0)
+                  ),
                   onPressed: () async {
                     if(_isMyTurn == false){
                       _showNotMyTurn();
                     }
                     else{
+
                       if(yourFieldCards.isEmpty){
                         CardComponent myCard =  gameInstance.findCardKey(gameInstance.myExistField, gameInstance.myFieldIndex);
                         Warrior myFieldAtkCard = myCard.warrior;
                         if(myFieldAttackTime[myFieldAtkCard.id] != 1){
                           _showMyCardAttackTimeIsZero();
                         }else{
+                          gameInstance.myAttack();
                           setState(() {
                             gameInstance.oppoHp.damaged(myFieldAtkCard.atk);
                             myFieldAttackTime[myFieldAtkCard.id] = 0;
@@ -574,7 +604,7 @@ class _GamePageState extends State<GamePage> {
                             print(e);
                           }
 
-                          gameInstance.myAttack();
+
                         }
                       }else{
                         CardComponent myCard =  gameInstance.findCardKey(gameInstance.myExistField, gameInstance.myFieldIndex);
@@ -586,19 +616,25 @@ class _GamePageState extends State<GamePage> {
                         if(myFieldAttackTime[myFieldAtkCard.id] != 1){
                           _showMyCardAttackTimeIsZero();
                         }else{
+                          gameInstance.myAttack();
                           setState(() {
                             myCard.attack(yourCard);
-                            if(myCard.hpPoint <=0){
+                            if(myCard.hpPoint <0 || myCard.hpPoint == 0){
                               //gameInstance.remove(myCard); // 내 카드 제거 메서드
+                              gameInstance.destructCard(gameInstance.myExistField, gameInstance.myFieldIndex);
                               myFieldCards.remove(myFieldAtkCard);
+                              myFieldIndex.remove(myFieldAtkCard.id);
                               print('삭제 체크 ${myFieldCards}, 삭제한 카드 ${myCard.warrior}');
                             }
-                            if(yourCard.hpPoint<=0){
+                            if(yourCard.hpPoint<0 || yourCard.hpPoint == 0){
                               //gameInstance.remove(yourCard); //상대 카드 제거 메서드
+                              gameInstance.destructCard(gameInstance.yourExistField, gameInstance.yourFieldIndex);
                               yourFieldCards.remove(yourFieldAtkCard);
+                              yourFieldIndex.remove(yourFieldAtkCard.id);
                               print('상대 카드 삭제 체크 필드 : ${yourFieldCards}, 삭제된 상대 카드 ${yourCard.warrior}');
                             }
                             myFieldAttackTime[myFieldAtkCard.id] = 0;
+                            gameInstance.atkEndCheck = -1;
                             print('여기 테스트중입니다~');
                           });
 
@@ -642,13 +678,13 @@ class _GamePageState extends State<GamePage> {
                             print(e);
                           }
 
-                          gameInstance.myAttack();
+                          //gameInstance.myAttack();
                         }
                       }
 
                     }
                   },
-                  child: Text('나의 공격'),
+                  child: Text('공격'),
                 ),
               ),
               // Container(
@@ -667,6 +703,9 @@ class _GamePageState extends State<GamePage> {
                 width: 75,
                 height: 40,
                 child: ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                    backgroundColor: (_isMyTurn == true) ? Colors.green :  Color.fromRGBO(184, 156, 120, 1.0)
+                  ),
                   onPressed: () async {
                     if(_isMyTurn == false){
                       _showNotMyTurn();
@@ -701,13 +740,14 @@ class _GamePageState extends State<GamePage> {
                           });
                           _showYourTurn();
                           gameInstance.oppoCost.addCost();
+                          drawCardCount = 1;
                         }
                       } catch (e) {
                         print(e);
                       }
                     }
                   },
-                  child: Text('내 턴 종료'),
+                  child: Text('턴 종료'),
                 ),
               ),
               // Container(
@@ -747,9 +787,12 @@ class _GamePageState extends State<GamePage> {
               //   ),
               // ),
               Container(
-                width: 75,
+                width: 85,
                 height: 40,
                 child: ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                      backgroundColor: (_isMyTurn == true) ? Colors.green :  Color.fromRGBO(184, 156, 120, 1.0)
+                  ),
                   onPressed: () {
                     if(_isMyTurn == false){
                       _showNotMyTurn();
@@ -764,9 +807,11 @@ class _GamePageState extends State<GamePage> {
                           _moveWarriorHandToField(cardComponent.warrior);
                           gameInstance.putMyCard();
                           myFieldCards.add(cardComponent.warrior);
+                          print('나의 필드 인덱스, 인스턴스 : ${gameInstance.myFieldIndex}');
                           myFieldIndex[cardComponent.warrior.id] =
                               gameInstance.myFieldIndex;
                           myFieldAttackTime[cardComponent.warrior.id] = 0;
+                          //myHandCards.remove(cardComponent.warrior);
                         } else {
                           _showNotEnoughCost();
                         }
@@ -774,7 +819,7 @@ class _GamePageState extends State<GamePage> {
                     }
 
                   },
-                  child: const Text('내 카드 내기'),
+                  child: const Text('카드내기'),
                 ),
               ),
             ],
@@ -885,43 +930,38 @@ class _GamePageState extends State<GamePage> {
         return AlertDialog(
           title: Row(
             children: [
-              const Expanded(child: SizedBox()),
-              const Expanded(child: SizedBox()),
               const Expanded(
                 child: Text(
                   'Menu',
                   textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20.0),
                 ),
               ),
-              const Expanded(child: SizedBox()),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Icon(Icons.close),
-              )
             ],
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
-            Column(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showExitConfirmationPopup(context); // 나가기 전 확인 팝업
-                  },
-                  child: const Text('나가기'),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showExitConfirmationPopup(context); // 나가기 전 확인 팝업
+                    },
+                    child: const Text('나가기'),
+                  ),
                 ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    // 여기에 버튼 동작 추가
-                  },
-                  child: const Text('어떤 기능 버튼'),
+                Expanded(child: const SizedBox(width: 5,)),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Icon(Icons.close),
+                  ),
                 ),
-                const SizedBox(height: 10),
               ],
             ),
           ],

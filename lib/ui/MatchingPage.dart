@@ -231,11 +231,11 @@ class _MatchedPageState extends State<MatchedPage> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('매칭된 유저'),
+          Text('매칭된 유저', style: TextStyle(fontSize: 20.0),),
           SizedBox(
             height: 20,
           ),
-          Text(widget.matchedUserId)
+          Text(widget.matchedUserId, style: TextStyle(fontSize: 30.0),)
         ],
       )),
     );

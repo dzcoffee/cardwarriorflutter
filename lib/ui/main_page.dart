@@ -112,7 +112,7 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          body: Center(
+          Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

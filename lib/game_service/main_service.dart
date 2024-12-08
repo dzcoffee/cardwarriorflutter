@@ -17,6 +17,8 @@ class MainService extends FlameGame with TapCallbacks{
   Vector2 imageOriginalSize = Vector2(80, 120);
   CardComponent? selectedCard;
 
+  int atkEndCheck = -1;
+
   late final screenWidth;
   late final screenHeight;
 
@@ -424,9 +426,9 @@ class MainService extends FlameGame with TapCallbacks{
    */
   void putYourCard(int positionIndex, Warrior warrior) async{
     //yourFieldIndex는 필드 위 선택된 카드 중 이전에 선택된 인덱스
-    if(yourFieldIndex != -1) {
-      findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
-    }
+    // if(yourFieldIndex != -1) {
+    //   findCardKey(yourExistField, yourFieldIndex).isGlowing = false;
+    // }
     yourFieldIndex = positionIndex;
 
     final sprite = await loadCardImage('cards/${warrior.id}.JPG');
@@ -437,7 +439,12 @@ class MainService extends FlameGame with TapCallbacks{
     );
     card.position = Vector2(screenWidth * 0.4, size.y * 0.05);
     card.isGlowing = true;
-    yourCards.remove(card);
+    for(CardComponent youCard in yourCards){
+      if(youCard.warrior.id == warrior.id){
+        yourCards.remove(youCard);
+        break;
+      }
+    }
     text.text = 'X ${yourCards.length}';
     add(card);
     card.add(move(Vector2(
@@ -547,6 +554,11 @@ class MainService extends FlameGame with TapCallbacks{
   }
 
   void myAttack(){
+    if(atkEndCheck > 0){
+      atkEndCheck += 1;
+    }else if(atkEndCheck == -1){
+      atkEndCheck = 1;
+    }
     CardComponent card = findCardKey(myExistField, myFieldIndex);
     int priority = card.priority;
     card.priority = 100;
@@ -567,13 +579,19 @@ class MainService extends FlameGame with TapCallbacks{
         card.priority = priority;
       });
     });
+    atkEndCheck -= 1;
   }
 
-  void yourAttack(){
-    CardComponent card = findCardKey(yourExistField, yourFieldIndex);
+  void yourAttack(int fieldIndex, int myFieldIndex){
+    if(atkEndCheck > 0){
+      atkEndCheck += 1;
+    }else if(atkEndCheck == -1){
+      atkEndCheck = 1;
+    }
+    CardComponent card = findCardKey(yourExistField, fieldIndex);
     int priority = card.priority;
     card.priority = 100;
-    card.add(move(Vector2(yourFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex]-20), 0.2));
+    card.add(move(Vector2(yourFieldCardX[fieldIndex], yourFieldCardY[fieldIndex]-20), 0.2));
     Future.delayed(Duration(milliseconds: 200), (){
       if(myExistField.length != 0) {
         card.add(move(
@@ -586,10 +604,11 @@ class MainService extends FlameGame with TapCallbacks{
             0.2));
       }
       Future.delayed(Duration(milliseconds: 400), (){
-        card.add(move(Vector2(myFieldCardX[yourFieldIndex], yourFieldCardY[yourFieldIndex]), 0.2));
+        card.add(move(Vector2(yourFieldCardX[fieldIndex], yourFieldCardY[fieldIndex]), 0.2));
         card.priority = priority;
       });
     });
+    atkEndCheck -= 1;
   }
 
   ///카드 없애는 애니메이션
@@ -621,8 +640,12 @@ class MainService extends FlameGame with TapCallbacks{
     Future.delayed(Duration(milliseconds: 400), (){
       if(map == yourExistField) {
         yourFieldIndex = findNextValue(map, yourFieldIndex);
-        yourCards.remove(card);
-        text.text = 'X ${yourCards.length}';
+        for(CardComponent youCard in yourCards){
+          if(youCard.warrior.id == card.warrior.id){
+            yourCards.remove(youCard);
+            break;
+          }
+        }
       } else{
         myFieldIndex = findNextValue(map, myFieldIndex);
         myCards.remove(card);
