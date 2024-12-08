@@ -14,17 +14,19 @@ class MatchingPage extends StatefulWidget {
 class _MatchingPageState extends State<MatchingPage> {
   bool isMatched = false;
   String matchMessage = '';
-  Timer? _timer;
   final _authentication = FirebaseAuth.instance;
   User? loggedUser;
   String? userId = '';
   String matchedUserId = '';
+  int check = 0;
+  StreamSubscription<DocumentSnapshot>? matchNewSubs;
 
+  @override
   void initState() {
     super.initState();
     getCurrentUser();
     userId = loggedUser?.email?.split('@').first;
-    startMatching();
+    checkExistingMatch();
   }
 
   void getCurrentUser() {
@@ -38,131 +40,91 @@ class _MatchingPageState extends State<MatchingPage> {
     }
   }
 
-  void startMatching() async {
-    await FirebaseFirestore.instance
-        .collection('UserMatching')
-        .doc('matching')
-        .set({
-      'users': FieldValue.arrayUnion([userId]) // 접속 중인 유저 추가
-    }, SetOptions(merge: true));
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
-    print(userId);
-    await FirebaseFirestore.instance
-        .collection('UserMatching')
-        .doc(userId)
-        .set({
-      'matchedWith': '',
-      'status': 'notMatched',
-    }, SetOptions(merge: true));
+  Future<void> checkExistingMatch() async { // 존재하는 매치 중에 매칭되지 않은 거 loop문으로 찾아봄
+    bool foundMatch = false; // 매칭된 유저 발견 여부
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('matches').get();
+      for(var doc in snapshot.docs){
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
 
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
-      findMatch(); // 매칭을 찾는 함수 호출
+        if(data['isMatched'] == false && data['userId'] != userId){ // 대기중인 유저 발견
+          updateMatchStatus(doc.id); // 매칭 정보 업데이트
+          print('checking Existing Match 중에');
+          setState(() {
+            matchedUserId = data['userId'];
+            matchMessage = '매칭유저가 발견되었습니다.';
+
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        MatchedPage(matchedUserId: matchedUserId, docId: doc.id)));
+          });
+          break;
+        }
+      }
+      if(!foundMatch) {
+        await createInitialMatchDocument(); // 다 돌아봤는데 없으면 Match 새로 만듬
+      }
+  }
+
+  void updateMatchStatus(String docId){
+    FirebaseFirestore.instance.collection('matches').doc(docId).update({
+      'matchedUserId' : userId,
+      'isMatched' : true
+    }).then((_){
+      setState(() {
+        isMatched = true;
+      });
     });
   }
 
-  Future<void> findMatch() async {
-    try {
-      DocumentSnapshot myMatchedSnapshot = await FirebaseFirestore.instance
-          .collection('UserMatching')
-          .doc(userId)
-          .get();
-
-      if (myMatchedSnapshot.exists) {
-        // 만약 매칭이 이미 되어 있으면
-        dynamic status = myMatchedSnapshot['status'];
-        if (status == 'matched') {
-          setState(() {
-            matchedUserId = myMatchedSnapshot['matchedWith'];
-            matchMessage = '유저를 찾았습니다.';
-            isMatched = true;
-          });
-          _timer?.cancel();
-
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      MatchedPage(matchedUserId: matchedUserId)));
-        } else {
-          // 매칭이 되어 있지 않는다면
-          DocumentSnapshot snapshot = await FirebaseFirestore.instance
-              .collection('UserMatching')
-              .doc('matching')
-              .get();
-
-          if (snapshot.exists) {
-            List<dynamic> users = snapshot['users'];
-            if (users.length > 1) {
-              // 매칭 대기 2명이상 존재(본인 포함임)
-              matchedUserId = (users
-                    ..where((id) => id != userId).toList()
-                    ..shuffle())
-                  .first;
-
-              //매칭 성공
-              setState(() {
-                matchMessage = '유저를 찾았습니다.';
-                isMatched = true;
-              });
-              _timer?.cancel();
-
-              await FirebaseFirestore.instance
-                  .collection('UserMatching')
-                  .doc('matching')
-                  .set({
-                'users': FieldValue.arrayRemove([userId]),
-              }, SetOptions(merge: true));
-
-              await FirebaseFirestore.instance
-                  .collection('UserMatching')
-                  .doc('matching')
-                  .set({
-                'users': FieldValue.arrayRemove([matchedUserId]),
-              }, SetOptions(merge: true));
-
-              await FirebaseFirestore.instance
-                  .collection('UserMatching')
-                  .doc(matchedUserId)
-                  .set({
-                'matchedWith': userId,
-                'status': 'matched',
-              }, SetOptions(merge: true));
-
-              await FirebaseFirestore.instance
-                  .collection('UserMatching')
-                  .doc(userId)
-                  .set({
-                'matchedWith': matchedUserId,
-                'status': 'matched',
-              }, SetOptions(merge: true));
-
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          MatchedPage(matchedUserId: matchedUserId)));
-            } else {
-              setState(() {
-                matchMessage = '매칭 중입니다.';
-                isMatched = false;
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      setState(() {
-        matchMessage = '오류가 발생했습니다.';
-        isMatched = true;
-      });
-      _timer?.cancel();
-    }
+  Future<void> createInitialMatchDocument() async {
+    // Firestore에 새로운 문서 생성
+    FirebaseFirestore.instance.collection('matches').add({
+      'userId': userId,
+      'matchedUserId': null, // 초기값 설정
+      'isMatched': false // 초기 상태 설정
+    }).then((docRef) {
+      // 문서 생성 후 리스닝을 시작
+      listenToNewMatch(docRef.id);
+    }).catchError((error) {
+      print("Error creating match document: $error");
+    });
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel(); // 위젯이 dispose될 때 타이머 중지
-    super.dispose();
+  void listenToNewMatch(String docRefId) {
+     matchNewSubs = FirebaseFirestore.instance.collection('matches').doc(docRefId).snapshots().listen((docSnapshot) {
+       if (docSnapshot.exists) {
+        if (docSnapshot.data()?['isMatched'] == true) {
+          print('sub 중단 직후 push');
+          setState(() {
+            matchedUserId = docSnapshot.data()?['matchedUserId'];
+            isMatched = true;
+            matchMessage = '매칭유저가 발견되었습니다.';
+            stopSubs();
+
+
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        MatchedPage(matchedUserId: matchedUserId, docId: docRefId)));
+          });
+        }
+      }
+    });
+  }
+
+  void stopSubs(){
+    if(matchNewSubs != null){
+      print('매치성공 구독 종료');
+      matchNewSubs!.cancel();
+    }
   }
 
   @override
@@ -180,22 +142,33 @@ class _MatchingPageState extends State<MatchingPage> {
 
 class MatchedPage extends StatefulWidget {
   final String matchedUserId;
-  MatchedPage({required this.matchedUserId});
+  final String docId;
+  MatchedPage({required this.matchedUserId, required this.docId});
 
   @override
   State<MatchedPage> createState() => _MatchedPageState();
 }
 
-
 class _MatchedPageState extends State<MatchedPage> {
   Timer? _timer; // 타이머 변수
+  final _authentication = FirebaseAuth.instance;
+  User? loggedUser;
+  String? userId = '';
+  Map<String, dynamic>? documentData; // 문서 데이터를 저장할 변수
+  String? docId;
 
   @override
   void initState() {
     super.initState();
+    getCurrentUser();
+    print('받아온 위젯 docID : ${widget.docId}');
+    userId = loggedUser?.email?.split('@').first;
+    deleteNotMatchedDoc();
+    docId = widget.docId;
+
     // 5초 후에 다른 페이지로 이동
     _timer = Timer(Duration(seconds: 5), () {
-      Navigator.pushNamed(context, '/gamepage');
+      Navigator.push(context, MaterialPageRoute(builder: (context) => GamePage(docId: widget.docId)));
     });
   }
 
@@ -203,6 +176,49 @@ class _MatchedPageState extends State<MatchedPage> {
   void dispose() {
     _timer?.cancel(); // 위젯이 dispose될 때 타이머 중지
     super.dispose();
+  }
+
+  void deleteNotMatchedDoc() async {
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('matches').doc(widget.docId).get();
+    if (snapshot.exists) {
+      // 문서가 존재하면 데이터 저장
+      documentData = snapshot.data() as Map<String, dynamic>?;
+      print('matchedUserdId : ' + documentData?['matchedUserId']);
+      print('유저 ID : ${userId}');
+      if(documentData?['matchedUserId'] == userId){
+        deleteDocByUserId(userId!);
+        docId = widget.docId;
+      }
+    }
+  }
+
+  void deleteDocByUserId(String userId) async {
+    // 'matches' 컬렉션에서 모든 문서 가져오기
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('matches').get();
+    print('userID 로 삭제도미 : ${userId}');
+    for (var doc in snapshot.docs) {
+      // 각 문서의 'userId' 필드 값 확인
+      if (doc.data() is Map<String, dynamic>) {
+        var documentData = doc.data() as Map<String, dynamic>;
+        if (documentData['userId'] == userId && documentData['matchedUserId'] == null ) {
+          // userId가 일치하는 경우, 해당 문서 삭제
+          await FirebaseFirestore.instance.collection('matches').doc(doc.id).delete();
+
+          print('문서 삭제됨: ${doc.id}');
+        }
+      }
+    }
+  }
+
+  void getCurrentUser() {
+    try {
+      final user = _authentication.currentUser;
+      if (user != null) {
+        loggedUser = user;
+      }
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
@@ -213,18 +229,15 @@ class _MatchedPageState extends State<MatchedPage> {
       ),
       body: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('매칭된 유저'),
-              SizedBox(
-                height: 20,
-              ),
-              Text(widget.matchedUserId)
-            ],
-          )
-      ),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('매칭된 유저', style: TextStyle(fontSize: 20.0),),
+          SizedBox(
+            height: 20,
+          ),
+          Text(widget.matchedUserId, style: TextStyle(fontSize: 30.0),)
+        ],
+      )),
     );
   }
 }
-
-

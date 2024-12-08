@@ -60,50 +60,69 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: const Text('로그인'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder()
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/loginbackground.png'),
+                fit: BoxFit.cover,
               ),
-              onSubmitted: (_) => _login(),
             ),
-            const SizedBox(height: 16,),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                  labelText: '비밀번호',
-                  border: OutlineInputBorder()
-              ),
-              onSubmitted: (_) => _login(),
-            ),
-            const SizedBox(height: 16,),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 60,
+                  height: 20,
                 ),
-                ElevatedButton(
-                  onPressed: _login,
-                  child: const Text('로그인'),
+                TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                  ),
+                  onSubmitted: (_) => _login(),
                 ),
-                TextButton(
-                  child: Text('회원가입하기'),
-                  onPressed: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
-                  },
+                const SizedBox(height: 16,),
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                      labelText: '비밀번호',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white
+                  ),
+                  onSubmitted: (_) => _login(),
+                ),
+                const SizedBox(height: 16,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                    ),
+                    ElevatedButton(
+                      onPressed: _login,
+                      child: const Text('로그인'),
+                    ),
+                    TextButton(
+                      child: Text('회원가입하기'),
+                      onPressed: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
+                      },
+                    )
+                  ],
                 )
               ],
-            )
-          ],
-        ),
+            ),
+          ),
+        ]
       ),
     );
   }
